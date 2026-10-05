@@ -1,0 +1,131 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+import '../models/review_model.dart';
+
+class FeedPageSnapshot {
+  FeedPageSnapshot({
+    required this.reviews,
+    required this.lastDocument,
+    required this.hasMore,
+  });
+
+  final List<ReviewModel> reviews;
+  final DocumentSnapshot<Map<String, dynamic>>? lastDocument;
+  final bool hasMore;
+}
+
+abstract interface class ReviewFirestoreDataSource {
+  Future<FeedPageSnapshot> fetchFeedPage({
+    required int limit,
+    DocumentSnapshot<Map<String, dynamic>>? startAfter,
+  });
+
+  Future<List<ReviewModel>> fetchByMovieId(int tmdbMovieId, {int limit = 20});
+
+  Future<List<ReviewModel>> fetchByMovieIds(List<int> tmdbMovieIds, {int limit = 30});
+
+  Future<void> toggleReaction({
+    required String reviewId,
+    required String userId,
+    required String reactionKey,
+  });
+}
+
+class ReviewFirestoreDataSourceImpl implements ReviewFirestoreDataSource {
+  ReviewFirestoreDataSourceImpl({FirebaseFirestore? firestore})
+      : _firestore = firestore ?? FirebaseFirestore.instance;
+
+  static const collectionPath = 'reviews';
+
+  final FirebaseFirestore _firestore;
+
+  CollectionReference<Map<String, dynamic>> get _collection =>
+      _firestore.collection(collectionPath);
+
+  @override
+  Future<FeedPageSnapshot> fetchFeedPage({
+    required int limit,
+    DocumentSnapshot<Map<String, dynamic>>? startAfter,
+  }) async {
+    Query<Map<String, dynamic>> query =
+        _collection.orderBy('createdAt', descending: true).limit(limit);
+
+    if (startAfter != null) {
+      query = query.startAfterDocument(startAfter);
+    }
+
+    final snapshot = await query.get();
+    final reviews = snapshot.docs
+        .map((doc) => ReviewModel.fromJson({...doc.data(), 'id': doc.id}))
+        .toList();
+
+    final lastDoc = snapshot.docs.isEmpty ? null : snapshot.docs.last;
+
+    return FeedPageSnapshot(
+      reviews: reviews,
+      lastDocument: lastDoc,
+      hasMore: snapshot.docs.length >= limit,
+    );
+  }
+
+  @override
+  Future<List<ReviewModel>> fetchByMovieId(int tmdbMovieId, {int limit = 20}) async {
+    final snapshot = await _collection
+        .where('tmdbMovieId', isEqualTo: tmdbMovieId)
+        .orderBy('createdAt', descending: true)
+        .limit(limit)
+        .get();
+
+    return snapshot.docs
+        .map((doc) => ReviewModel.fromJson({...doc.data(), 'id': doc.id}))
+        .toList();
+  }
+
+  @override
+  Future<List<ReviewModel>> fetchByMovieIds(
+    List<int> tmdbMovieIds, {
+    int limit = 30,
+  }) async {
+    if (tmdbMovieIds.isEmpty) return [];
+
+    final ids = tmdbMovieIds.take(10).toList();
+    final snapshot = await _collection
+        .where('tmdbMovieId', whereIn: ids)
+        .orderBy('createdAt', descending: true)
+        .limit(limit)
+        .get();
+
+    return snapshot.docs
+        .map((doc) => ReviewModel.fromJson({...doc.data(), 'id': doc.id}))
+        .toList();
+  }
+
+  @override
+  Future<void> toggleReaction({
+    required String reviewId,
+    required String userId,
+    required String reactionKey,
+  }) async {
+    final docRef = _collection.doc(reviewId);
+
+    await _firestore.runTransaction((transaction) async {
+      final snap = await transaction.get(docRef);
+      if (!snap.exists) return;
+
+      final data = snap.data() ?? {};
+      final reactionsRaw = Map<String, dynamic>.from(data['reactions'] as Map? ?? {});
+      final current = (reactionsRaw[reactionKey] as List<dynamic>? ?? [])
+          .map((e) => e.toString())
+          .toList();
+
+      if (current.contains(userId)) {
+        current.remove(userId);
+      } else {
+        current.add(userId);
+      }
+
+      reactionsRaw[reactionKey] = current;
+      transaction.update(docRef, {'reactions': reactionsRaw});
+    });
+  }
+}

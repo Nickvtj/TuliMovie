@@ -5,7 +5,14 @@ import '../../../../core/theme/theme.dart';
 
 /// Página temporária da Fase 1 — valida theme + widgets core (remover quando houver auth/feed).
 class DesignSystemShowcasePage extends StatefulWidget {
-  const DesignSystemShowcasePage({super.key});
+  const DesignSystemShowcasePage({
+    super.key,
+    this.userDisplayName,
+    this.onSignOut,
+  });
+
+  final String? userDisplayName;
+  final VoidCallback? onSignOut;
 
   @override
   State<DesignSystemShowcasePage> createState() => _DesignSystemShowcasePageState();
@@ -14,6 +21,16 @@ class DesignSystemShowcasePage extends StatefulWidget {
 class _DesignSystemShowcasePageState extends State<DesignSystemShowcasePage> {
   double _rating = 3.5;
   bool _loadingDemo = false;
+
+  static String _initialsFromName(String name) {
+    final parts = name.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
+    if (parts.isEmpty) return '?';
+    if (parts.length == 1) {
+      final token = parts.first;
+      return (token.length >= 2 ? token.substring(0, 2) : token).toUpperCase();
+    }
+    return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -29,11 +46,21 @@ class _DesignSystemShowcasePageState extends State<DesignSystemShowcasePage> {
                 floating: true,
                 title: Text('TuliMovie', style: textTheme.headlineSmall),
                 actions: [
+                  if (widget.onSignOut != null)
+                    IconButton(
+                      tooltip: 'Sair',
+                      onPressed: widget.onSignOut,
+                      icon: const Icon(Icons.logout_rounded),
+                    ),
                   Padding(
                     padding: const EdgeInsets.only(right: 16),
                     child: UserAvatarGroup(
                       imageUrls: const [null, null, null],
-                      initials: const ['NV', 'AM', 'JP'],
+                      initials: [
+                        _initialsFromName(widget.userDisplayName ?? 'NV'),
+                        'AM',
+                        'JP',
+                      ],
                       size: 32,
                     ),
                   ),
