@@ -1,2 +1,9 @@
+export 'config/env_config.dart';
+export 'di/injection.dart';
+export 'errors/app_exception.dart';
+export 'errors/failure.dart';
+export 'network/network.dart';
 export 'presentation/widgets/widgets.dart';
+export 'services/services.dart';
 export 'theme/theme.dart';
+export 'utils/tmdb_image_url.dart';

@@ -39,7 +39,27 @@ Se ainda não existir pasta `android/` / `web/`, na raiz do projeto:
 ```bash
 flutter create . --org com.tulimovie --project-name tulimovie --platforms=android,web
 flutter pub get
-flutter run -d chrome
+flutter run -d chrome --dart-define=TMDB_API_KEY=sua_chave_v3
+```
+
+Firebase (Firestore): `flutterfire configure` gera `lib/core/config/firebase_options.dart`.
+
+## Infra (Fase 2)
+
+```
+lib/core/network/          # Dio + interceptors (auth TMDB, cache, log, erro)
+lib/core/services/         # IBaseFirestoreService (CRUD genérico)
+lib/core/di/injection.dart # get_it
+lib/features/movies/
+  domain/                  # entities + MovieRepository
+  data/                    # TMDB datasource, models, mappers, impl
+```
+
+Uso do repositório:
+
+```dart
+final movies = sl<MovieRepository>();
+final results = await movies.searchMovies(query: 'matrix');
 ```
 
 ## Design tokens
