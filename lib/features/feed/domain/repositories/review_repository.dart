@@ -32,4 +32,6 @@ abstract interface class ReviewRepository {
     required String userId,
     required String reactionKey,
   });
+
+  Future<Set<int>> watchedMovieIdsForUsers(Set<String> userIds);
 }

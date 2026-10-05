@@ -13,6 +13,7 @@ import '../../../feed/presentation/widgets/review_card_widget.dart';
 import '../providers/movie_providers.dart';
 import '../widgets/cast_carousel.dart';
 import '../widgets/streaming_provider_chip.dart';
+import '../../../reviews/presentation/pages/create_review_page.dart';
 import 'actor_details_page.dart';
 
 class MovieDetailsPage extends ConsumerWidget {
@@ -39,6 +40,19 @@ class MovieDetailsPage extends ConsumerWidget {
         final backdrop = TmdbImageUrl.poster(movie.backdropPath ?? movie.posterPath, size: 'w780');
 
         return Scaffold(
+          floatingActionButton: FloatingActionButton.extended(
+            backgroundColor: AppColors.gold,
+            foregroundColor: const Color(0xFF1A1400),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute<bool>(
+                  builder: (_) => CreateReviewPage(movieId: movieId),
+                ),
+              );
+            },
+            icon: const Icon(Icons.rate_review_outlined),
+            label: const Text('Avaliar'),
+          ),
           body: CustomScrollView(
             slivers: [
               SliverAppBar(

@@ -31,4 +31,13 @@ abstract interface class MovieRepository {
     required int personId,
     String language = 'pt-BR',
   });
+
+  Future<List<MovieEntity>> discoverMovies({
+    int page = 1,
+    String language = 'pt-BR',
+    String watchRegion = 'BR',
+    int? withWatchProviderId,
+    int? runtimeLteMinutes,
+    String? withGenres,
+  });
 }

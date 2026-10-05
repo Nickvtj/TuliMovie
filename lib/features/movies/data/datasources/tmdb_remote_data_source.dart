@@ -32,6 +32,15 @@ abstract interface class TmdbRemoteDataSource {
     required int personId,
     String language = 'pt-BR',
   });
+
+  Future<PaginatedMoviesModel> discoverMovies({
+    int page = 1,
+    String language = 'pt-BR',
+    String watchRegion = 'BR',
+    int? withWatchProviderId,
+    int? runtimeLteMinutes,
+    String? withGenres,
+  });
 }
 
 class TmdbRemoteDataSourceImpl implements TmdbRemoteDataSource {
@@ -152,6 +161,42 @@ class TmdbRemoteDataSourceImpl implements TmdbRemoteDataSource {
     } catch (e) {
       throw DioExceptionMapper.extract(e);
     }
+  }
+
+  @override
+  Future<PaginatedMoviesModel> discoverMovies({
+    int page = 1,
+    String language = 'pt-BR',
+    String watchRegion = 'BR',
+    int? withWatchProviderId,
+    int? runtimeLteMinutes,
+    String? withGenres,
+  }) async {
+    final query = <String, dynamic>{
+      'page': page,
+      'language': language,
+      'watch_region': watchRegion,
+      'sort_by': 'popularity.desc',
+      'include_adult': false,
+      'include_video': false,
+      'vote_count.gte': 50,
+    };
+
+    if (withWatchProviderId != null) {
+      query['with_watch_providers'] = withWatchProviderId;
+    }
+    if (runtimeLteMinutes != null) {
+      query['with_runtime.lte'] = runtimeLteMinutes;
+    }
+    if (withGenres != null && withGenres.isNotEmpty) {
+      query['with_genres'] = withGenres;
+    }
+
+    return _getPaginatedMovies(
+      '/discover/movie',
+      queryParameters: query,
+      cacheTtl: const Duration(minutes: 20),
+    );
   }
 
   Future<PaginatedMoviesModel> _getPaginatedMovies(

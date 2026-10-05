@@ -5,6 +5,8 @@ abstract interface class UserFirestoreDataSource {
   Future<void> upsertUser(UserModel user);
 
   Future<UserModel?> getUser(String userId);
+
+  Future<List<UserModel>> fetchAllUsers({String? excludeUserId, int limit = 50});
 }
 
 class UserFirestoreDataSourceImpl implements UserFirestoreDataSource {
@@ -32,5 +34,17 @@ class UserFirestoreDataSourceImpl implements UserFirestoreDataSource {
       documentId: userId,
       fromJson: UserModel.fromJson,
     );
+  }
+
+  @override
+  Future<List<UserModel>> fetchAllUsers({String? excludeUserId, int limit = 50}) async {
+    final users = await _firestore.query<UserModel>(
+      collectionPath: collectionPath,
+      fromJson: UserModel.fromJson,
+      limit: limit,
+    );
+
+    if (excludeUserId == null) return users;
+    return users.where((user) => user.id != excludeUserId).toList();
   }
 }

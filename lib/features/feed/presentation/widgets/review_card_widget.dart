@@ -6,6 +6,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../domain/constants/quick_reactions.dart';
 import '../../domain/entities/review_entity.dart';
 import 'quick_reactions_sheet.dart';
+import 'spoiler_blur_text.dart';
 
 typedef ReviewCardTap = void Function(ReviewEntity review);
 
@@ -16,12 +17,14 @@ class ReviewCardWidget extends StatelessWidget {
     required this.review,
     this.onOpenMovie,
     this.onReact,
+    this.onShare,
     this.compact = false,
   });
 
   final ReviewEntity review;
   final ReviewCardTap? onOpenMovie;
   final Future<void> Function(String reactionKey)? onReact;
+  final VoidCallback? onShare;
   final bool compact;
 
   @override
@@ -88,27 +91,41 @@ class ReviewCardWidget extends StatelessWidget {
           ),
           if (review.comment != null && review.comment!.trim().isNotEmpty) ...[
             const SizedBox(height: 12),
-            Text(
-              review.comment!,
-              maxLines: compact ? 2 : 3,
-              overflow: TextOverflow.ellipsis,
-              style: textTheme.bodyMedium,
-            ),
+            if (review.containsSpoiler)
+              SpoilerBlurText(
+                text: review.comment!,
+                maxLines: compact ? 2 : 3,
+              )
+            else
+              Text(
+                review.comment!,
+                maxLines: compact ? 2 : 3,
+                overflow: TextOverflow.ellipsis,
+                style: textTheme.bodyMedium,
+              ),
           ],
           const SizedBox(height: 12),
           _ReactionStrip(review: review),
-          Align(
-            alignment: Alignment.centerRight,
-            child: TextButton.icon(
-              onPressed: onReact == null
-                  ? null
-                  : () async {
-                      final key = await showQuickReactionsSheet(context);
-                      if (key != null) await onReact!(key);
-                    },
-              icon: const Icon(Icons.add_reaction_outlined, size: 18),
-              label: const Text('Reagir'),
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              if (onShare != null)
+                TextButton.icon(
+                  onPressed: onShare,
+                  icon: const Icon(Icons.ios_share, size: 18),
+                  label: const Text('Card'),
+                ),
+              TextButton.icon(
+                onPressed: onReact == null
+                    ? null
+                    : () async {
+                        final key = await showQuickReactionsSheet(context);
+                        if (key != null) await onReact!(key);
+                      },
+                icon: const Icon(Icons.add_reaction_outlined, size: 18),
+                label: const Text('Reagir'),
+              ),
+            ],
           ),
         ],
       ),

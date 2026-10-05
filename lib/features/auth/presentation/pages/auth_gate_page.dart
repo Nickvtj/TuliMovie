@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/presentation/widgets/widgets.dart';
 import '../../../shell/presentation/pages/main_shell_page.dart';
+import '../widgets/push_permission_prompt.dart';
 import '../providers/auth_providers.dart';
 import 'login_register_page.dart';
 
@@ -21,7 +22,7 @@ class AuthGatePage extends ConsumerWidget {
       error: (error, _) => const LoginRegisterPage(),
       data: (user) {
         if (user == null) return const LoginRegisterPage();
-        return const MainShellPage();
+        return const PushPermissionPrompt(child: MainShellPage());
       },
     );
   }

@@ -76,4 +76,21 @@ class ReviewRepositoryImpl implements ReviewRepository {
       throw AppException(message: 'Erro ao reagir.', cause: e);
     }
   }
+
+  @override
+  Future<Set<int>> watchedMovieIdsForUsers(Set<String> userIds) async {
+    if (userIds.isEmpty) return {};
+    try {
+      final reviews = await _dataSource.fetchRecentReviews();
+      final watched = <int>{};
+
+      for (final review in reviews) {
+        final involved = review.participants.any((p) => userIds.contains(p.userId));
+        if (involved) watched.add(review.tmdbMovieId);
+      }
+      return watched;
+    } catch (e) {
+      throw AppException(message: 'Erro ao calcular histórico assistido.', cause: e);
+    }
+  }
 }

@@ -5,6 +5,7 @@ import '../../../../core/presentation/widgets/widgets.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../../movies/presentation/pages/movie_details_page.dart';
+import '../../../share/presentation/providers/share_providers.dart';
 import '../providers/feed_providers.dart';
 import '../widgets/review_card_widget.dart';
 
@@ -103,6 +104,16 @@ class _FeedPageState extends ConsumerState<FeedPage> {
                     final review = feed.reviews[index];
                     return ReviewCardWidget(
                       review: review,
+                      onShare: () async {
+                        try {
+                          await ref.read(shareReviewCardUseCaseProvider).call(review);
+                        } catch (_) {
+                          if (!context.mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Falha ao gerar card.')),
+                          );
+                        }
+                      },
                       onOpenMovie: (_) {
                         Navigator.of(context).push(
                           MaterialPageRoute<void>(

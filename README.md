@@ -34,13 +34,15 @@ lib/
 
 ## Rodar
 
-Se ainda não existir pasta `android/` / `web/`, na raiz do projeto:
+Se ainda não existir pasta `android/` / `web/icons/`, na raiz:
 
-```bash
+```powershell
 flutter create . --org com.tulimovie --project-name tulimovie --platforms=android,web
 flutter pub get
-flutter run -d chrome --dart-define=TMDB_API_KEY=sua_chave_v3
+flutter run -d chrome --dart-define=TMDB_API_KEY=sua_chave_v3 --dart-define=FCM_VAPID_KEY=sua_vapid
 ```
+
+Release completo: [docs/RELEASE.md](docs/RELEASE.md)
 
 Firebase: `flutterfire configure` gera `lib/core/config/firebase_options.dart`. Ative **Authentication → E-mail/Senha** e crie índice/coleção `users`.
 
@@ -64,6 +66,25 @@ Sessão: `authSessionProvider` (stream). Gate: `AuthGatePage`.
 - `ActorDetailsPage` — **Assistidos pela Turma** (reutiliza `ReviewCardWidget`)
 
 Firestore: coleção `reviews` + índices compostos (`createdAt`, `tmdbMovieId+createdAt`).
+
+## Dinâmicas (Fase 5)
+
+- `matches/` — salas temporárias + subcoleção `swipes`
+- `watchlist/shared/items` — roleta
+- `cinepass/queue` — fila semanal
+- Aba **Diversão** → Cinepass, Roleta, Tinder do Cinema
+
+## Engajamento (Fase 6)
+
+- `ReviewShareCardWidget` + `ImageExportService` + `share_plus` (PNG 9:16 off-screen)
+- **Perfil**: Top 4, Filômetro, rótulo cinéfilo, badges
+- **Tuli Awards**: slides verticais + votação cômica (`awards/{year}/votes`)
+
+## PWA & Push (Fase 7)
+
+- `web/manifest.json` + meta tags iOS em `web/index.html`
+- `firebase_messaging` + `web/firebase-messaging-sw.js`
+- Scripts: `scripts/build_release.ps1`, `scripts/deploy_web.ps1`
 
 ## Infra (Fase 2)
 

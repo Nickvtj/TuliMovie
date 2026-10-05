@@ -15,6 +15,7 @@ abstract final class ReviewMapper {
       comment: model.comment,
       createdAt: model.createdAt,
       reactions: model.reactions,
+      containsSpoiler: model.containsSpoiler,
     );
   }
 
@@ -27,6 +28,7 @@ abstract final class ReviewMapper {
       displayName: model.displayName,
       rating: model.rating,
       photoUrl: model.photoUrl,
+      hasSubmittedRating: model.hasSubmittedRating,
     );
   }
 }

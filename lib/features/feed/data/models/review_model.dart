@@ -6,12 +6,14 @@ class ReviewParticipantModel {
     required this.displayName,
     required this.rating,
     this.photoUrl,
+    this.hasSubmittedRating = true,
   });
 
   final String userId;
   final String displayName;
   final double rating;
   final String? photoUrl;
+  final bool hasSubmittedRating;
 
   factory ReviewParticipantModel.fromJson(Map<String, dynamic> json) {
     return ReviewParticipantModel(
@@ -19,6 +21,7 @@ class ReviewParticipantModel {
       displayName: json['displayName'] as String? ?? '',
       rating: (json['rating'] as num?)?.toDouble() ?? 0,
       photoUrl: json['photoUrl'] as String?,
+      hasSubmittedRating: json['hasSubmittedRating'] as bool? ?? true,
     );
   }
 
@@ -27,6 +30,7 @@ class ReviewParticipantModel {
         'displayName': displayName,
         'rating': rating,
         if (photoUrl != null) 'photoUrl': photoUrl,
+        'hasSubmittedRating': hasSubmittedRating,
       };
 }
 
@@ -42,6 +46,8 @@ class ReviewModel {
     this.comment,
     required this.createdAt,
     this.reactions = const {},
+    this.containsSpoiler = false,
+    this.authorAnswers = const {},
   });
 
   final String id;
@@ -54,6 +60,8 @@ class ReviewModel {
   final String? comment;
   final DateTime createdAt;
   final Map<String, List<String>> reactions;
+  final bool containsSpoiler;
+  final Map<String, double> authorAnswers;
 
   factory ReviewModel.fromJson(Map<String, dynamic> json) {
     final reactionsRaw = json['reactions'] as Map<String, dynamic>? ?? {};
@@ -80,6 +88,25 @@ class ReviewModel {
       comment: json['comment'] as String?,
       createdAt: _parseDate(json['createdAt']) ?? DateTime.now(),
       reactions: reactions,
+      containsSpoiler: json['containsSpoiler'] as bool? ?? false,
+      authorAnswers: _parseAuthorAnswers(json['authorAnswers']),
+    );
+  }
+
+  ReviewModel copyWithId(String id) {
+    return ReviewModel(
+      id: id,
+      tmdbMovieId: tmdbMovieId,
+      movieTitle: movieTitle,
+      moviePosterPath: moviePosterPath,
+      movieReleaseYear: movieReleaseYear,
+      participants: participants,
+      groupAverageRating: groupAverageRating,
+      comment: comment,
+      createdAt: createdAt,
+      reactions: reactions,
+      containsSpoiler: containsSpoiler,
+      authorAnswers: authorAnswers,
     );
   }
 
@@ -94,7 +121,16 @@ class ReviewModel {
       if (comment != null) 'comment': comment,
       'createdAt': Timestamp.fromDate(createdAt),
       'reactions': reactions,
+      'containsSpoiler': containsSpoiler,
+      if (authorAnswers.isNotEmpty) 'authorAnswers': authorAnswers,
     };
+  }
+
+  static Map<String, double> _parseAuthorAnswers(dynamic raw) {
+    if (raw is! Map) return const {};
+    return raw.map(
+      (key, value) => MapEntry(key.toString(), (value as num).toDouble()),
+    );
   }
 
   static DateTime? _parseDate(dynamic value) {

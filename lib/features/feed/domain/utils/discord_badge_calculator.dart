@@ -5,8 +5,11 @@ abstract final class DiscordBadgeCalculator {
   static const double spreadThreshold = 1.5;
 
   static bool shouldShow(List<ReviewParticipantEntity> participants) {
-    if (participants.length < 2) return false;
-    final ratings = participants.map((p) => p.rating);
+    final ratings = participants
+        .where((p) => p.countsForSessionAverage)
+        .map((p) => p.rating)
+        .toList();
+    if (ratings.length < 2) return false;
     final min = ratings.reduce((a, b) => a < b ? a : b);
     final max = ratings.reduce((a, b) => a > b ? a : b);
     return (max - min) >= spreadThreshold;

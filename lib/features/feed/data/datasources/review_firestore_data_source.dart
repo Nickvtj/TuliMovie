@@ -29,6 +29,10 @@ abstract interface class ReviewFirestoreDataSource {
     required String userId,
     required String reactionKey,
   });
+
+  Future<ReviewModel> createReview(ReviewModel review);
+
+  Future<List<ReviewModel>> fetchRecentReviews({int limit = 250});
 }
 
 class ReviewFirestoreDataSourceImpl implements ReviewFirestoreDataSource {
@@ -98,6 +102,27 @@ class ReviewFirestoreDataSourceImpl implements ReviewFirestoreDataSource {
     return snapshot.docs
         .map((doc) => ReviewModel.fromJson({...doc.data(), 'id': doc.id}))
         .toList();
+  }
+
+  @override
+  Future<List<ReviewModel>> fetchRecentReviews({int limit = 250}) async {
+    final snapshot = await _collection
+        .orderBy('createdAt', descending: true)
+        .limit(limit)
+        .get();
+
+    return snapshot.docs
+        .map((doc) => ReviewModel.fromJson({...doc.data(), 'id': doc.id}))
+        .toList();
+  }
+
+  @override
+  Future<ReviewModel> createReview(ReviewModel review) async {
+    final docRef = review.id.isEmpty ? _collection.doc() : _collection.doc(review.id);
+    final payload = review.copyWithId(docRef.id);
+
+    await docRef.set(payload.toJson());
+    return payload;
   }
 
   @override

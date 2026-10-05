@@ -119,6 +119,32 @@ class MovieRepositoryImpl implements MovieRepository {
     }
   }
 
+  @override
+  Future<List<MovieEntity>> discoverMovies({
+    int page = 1,
+    String language = 'pt-BR',
+    String watchRegion = EnvConfig.tmdbDefaultRegion,
+    int? withWatchProviderId,
+    int? runtimeLteMinutes,
+    String? withGenres,
+  }) async {
+    try {
+      final result = await _remoteDataSource.discoverMovies(
+        page: page,
+        language: language,
+        watchRegion: watchRegion,
+        withWatchProviderId: withWatchProviderId,
+        runtimeLteMinutes: runtimeLteMinutes,
+        withGenres: withGenres,
+      );
+      return MovieMapper.toEntityList(result.results);
+    } on AppException {
+      rethrow;
+    } catch (e) {
+      throw AppException(message: 'Falha ao descobrir filmes.', cause: e);
+    }
+  }
+
   void _ensureQuery(String query) {
     if (query.trim().length < 2) {
       throw const AppException(
