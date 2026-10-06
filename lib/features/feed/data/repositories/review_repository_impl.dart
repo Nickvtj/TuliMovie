@@ -5,6 +5,7 @@ import '../../domain/entities/review_entity.dart';
 import '../../domain/repositories/review_repository.dart';
 import '../datasources/review_firestore_data_source.dart';
 import '../mappers/review_mapper.dart';
+import '../models/review_model.dart';
 
 class _FirestoreFeedCursor extends FeedCursor {
   _FirestoreFeedCursor(this.document);
@@ -53,8 +54,15 @@ class ReviewRepositoryImpl implements ReviewRepository {
   @override
   Future<List<ReviewEntity>> getReviewsByMovieIds(List<int> tmdbMovieIds) async {
     try {
-      final models = await _dataSource.fetchByMovieIds(tmdbMovieIds);
-      return ReviewMapper.toEntityList(models);
+      if (tmdbMovieIds.isEmpty) return const [];
+
+      final allModels = <ReviewModel>[];
+      for (var i = 0; i < tmdbMovieIds.length; i += 10) {
+        final end = i + 10 > tmdbMovieIds.length ? tmdbMovieIds.length : i + 10;
+        final chunk = tmdbMovieIds.sublist(i, end);
+        allModels.addAll(await _dataSource.fetchByMovieIds(chunk));
+      }
+      return ReviewMapper.toEntityList(allModels);
     } catch (e) {
       throw AppException(message: 'Erro ao carregar avaliações da turma.', cause: e);
     }

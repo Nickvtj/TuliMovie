@@ -36,7 +36,12 @@ final personSearchProvider = FutureProvider.family<List<PersonEntity>, String>((
 
 final actorGroupReviewsProvider =
     FutureProvider.family<List<ReviewEntity>, int>((ref, personId) async {
-  final filmography = await ref.watch(personFilmographyProvider(personId).future);
-  final ids = filmography.allMovies.map((movie) => movie.id).toList();
-  return ref.read(getMovieGroupReviewsUseCaseProvider).byMovies(ids);
+  try {
+    final filmography = await ref.watch(personFilmographyProvider(personId).future);
+    final ids = filmography.allMovies.map((movie) => movie.id).toList();
+    if (ids.isEmpty) return const [];
+    return ref.read(getMovieGroupReviewsUseCaseProvider).byMovies(ids);
+  } catch (_) {
+    return const [];
+  }
 });

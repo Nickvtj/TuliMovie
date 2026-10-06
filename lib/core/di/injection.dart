@@ -24,9 +24,17 @@ import '../../features/awards/data/repositories/awards_repository_impl.dart';
 import '../../features/awards/domain/repositories/awards_repository.dart';
 import '../../features/awards/domain/usecases/get_tuli_awards_use_case.dart';
 import '../../features/awards/domain/usecases/vote_comic_category_use_case.dart';
+import '../../features/discover/domain/usecases/get_discover_carousels_use_case.dart';
+import '../../features/discover/domain/usecases/get_discover_movies_use_case.dart';
+import '../../features/profile/data/datasources/watched_movies_firestore_data_source.dart';
 import '../../features/profile/data/repositories/profile_repository_impl.dart';
+import '../../features/profile/data/repositories/watched_movies_repository_impl.dart';
 import '../../features/profile/domain/repositories/profile_repository.dart';
+import '../../features/profile/domain/repositories/watched_movies_repository.dart';
 import '../../features/profile/domain/usecases/get_profile_dashboard_use_case.dart';
+import '../../features/profile/domain/usecases/mark_movie_watched_use_case.dart';
+import '../../features/tools/domain/usecases/add_watchlist_item_use_case.dart';
+import '../../features/tools/domain/usecases/toggle_watchlist_item_use_case.dart';
 import '../../features/share/domain/usecases/share_review_card_use_case.dart';
 import '../notifications/push_notification_service.dart';
 import '../services/image_export_service.dart';
@@ -98,14 +106,25 @@ Future<void> configureDependencies() async {
     ..registerLazySingleton<MatchRoomRepository>(
       () => MatchRoomRepositoryImpl(sl<MatchRoomFirestoreDataSource>()),
     )
+    ..registerLazySingleton<WatchedMoviesFirestoreDataSource>(
+      WatchedMoviesFirestoreDataSource.new,
+    )
+    ..registerLazySingleton<WatchedMoviesRepository>(
+      () => WatchedMoviesRepositoryImpl(sl<WatchedMoviesFirestoreDataSource>()),
+    )
+    ..registerLazySingleton(() => MarkMovieWatchedUseCase(sl<WatchedMoviesRepository>()))
+    ..registerLazySingleton<WatchlistFirestoreDataSource>(
+      WatchlistFirestoreDataSource.new,
+    )
+    ..registerLazySingleton(() => AddWatchlistItemUseCase(sl<WatchlistFirestoreDataSource>()))
+    ..registerLazySingleton(() => ToggleWatchlistItemUseCase(sl<WatchlistFirestoreDataSource>()))
     ..registerLazySingleton(
       () => PickMatchCandidatesUseCase(
         movieRepository: sl<MovieRepository>(),
         reviewRepository: sl<ReviewRepository>(),
+        watchedMoviesRepository: sl<WatchedMoviesRepository>(),
+        watchlistDataSource: sl<WatchlistFirestoreDataSource>(),
       ),
-    )
-    ..registerLazySingleton<WatchlistFirestoreDataSource>(
-      WatchlistFirestoreDataSource.new,
     )
     ..registerLazySingleton<CinepassFirestoreDataSource>(
       CinepassFirestoreDataSource.new,
@@ -116,7 +135,21 @@ Future<void> configureDependencies() async {
     ..registerLazySingleton<ProfileRepository>(
       () => ProfileRepositoryImpl(sl<ReviewFirestoreDataSource>()),
     )
-    ..registerLazySingleton(() => GetProfileDashboardUseCase(sl<ProfileRepository>()))
+    ..registerLazySingleton(
+      () => GetProfileDashboardUseCase(sl<ProfileRepository>(), sl<WatchedMoviesRepository>()),
+    )
+    ..registerLazySingleton(
+      () => GetDiscoverMoviesUseCase(
+        movies: sl<MovieRepository>(),
+        watchedMovies: sl<WatchedMoviesRepository>(),
+      ),
+    )
+    ..registerLazySingleton(
+      () => GetDiscoverCarouselsUseCase(
+        movies: sl<MovieRepository>(),
+        reviews: sl<ReviewRepository>(),
+      ),
+    )
     ..registerLazySingleton<AwardsFirestoreDataSource>(AwardsFirestoreDataSource.new)
     ..registerLazySingleton<AwardsRepository>(
       () => AwardsRepositoryImpl(sl<AwardsFirestoreDataSource>()),

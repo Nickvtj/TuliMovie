@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../movie_match/presentation/pages/match_lobby_page.dart';
+import 'watchlist_page.dart';
 import '../widgets/cinepass_widget.dart';
 import '../widgets/movie_roulette_widget.dart';
 
@@ -22,6 +23,18 @@ class ToolsHubPage extends StatelessWidget {
             const SizedBox(height: 8),
             const CinepassWidget(),
             const SizedBox(height: 24),
+            Text('Watchlist do grupo', style: textTheme.titleMedium),
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(builder: (_) => const WatchlistPage()),
+                );
+              },
+              icon: const Icon(Icons.bookmark),
+              label: const Text('Ver filmes salvos (quero ver)'),
+            ),
+            const SizedBox(height: 16),
             Text('Roleta da Watchlist', style: textTheme.titleMedium),
             const SizedBox(height: 8),
             const MovieRouletteWidget(),

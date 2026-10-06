@@ -1,8 +1,10 @@
 import '../../../../core/network/dio_exception_mapper.dart';
 import '../../../../core/network/tuli_http_client.dart';
+import '../../domain/entities/discover_query_entity.dart';
 import '../models/movie_details_model.dart';
 import '../models/movie_model.dart';
 import '../models/person_model.dart';
+import '../utils/discover_query_builder.dart';
 
 /// Contrato de acesso HTTP ao TMDB (implementação única — mockável nos testes).
 abstract interface class TmdbRemoteDataSource {
@@ -41,6 +43,8 @@ abstract interface class TmdbRemoteDataSource {
     int? runtimeLteMinutes,
     String? withGenres,
   });
+
+  Future<PaginatedMoviesModel> discoverMoviesQuery(DiscoverQueryEntity query);
 
   Future<PaginatedMoviesModel> getTrendingMovies({
     int page = 1,
@@ -188,30 +192,27 @@ class TmdbRemoteDataSourceImpl implements TmdbRemoteDataSource {
     int? withWatchProviderId,
     int? runtimeLteMinutes,
     String? withGenres,
-  }) async {
-    final query = <String, dynamic>{
-      'page': page,
-      'language': language,
-      'watch_region': watchRegion,
-      'sort_by': 'popularity.desc',
-      'include_adult': false,
-      'include_video': false,
-      'vote_count.gte': 50,
-    };
+  }) {
+    return discoverMoviesQuery(
+      DiscoverQueryEntity(
+        page: page,
+        language: language,
+        watchRegion: watchRegion,
+        withWatchProviderIds:
+            withWatchProviderId == null ? const [] : [withWatchProviderId],
+        runtimeLteMinutes: runtimeLteMinutes,
+        withGenres: withGenres == null || withGenres.isEmpty
+            ? const []
+            : withGenres.split(',').map(int.parse).toList(),
+      ),
+    );
+  }
 
-    if (withWatchProviderId != null) {
-      query['with_watch_providers'] = withWatchProviderId;
-    }
-    if (runtimeLteMinutes != null) {
-      query['with_runtime.lte'] = runtimeLteMinutes;
-    }
-    if (withGenres != null && withGenres.isNotEmpty) {
-      query['with_genres'] = withGenres;
-    }
-
+  @override
+  Future<PaginatedMoviesModel> discoverMoviesQuery(DiscoverQueryEntity query) {
     return _getPaginatedMovies(
       '/discover/movie',
-      queryParameters: query,
+      queryParameters: DiscoverQueryBuilder.toQueryParameters(query),
       cacheTtl: const Duration(minutes: 20),
     );
   }

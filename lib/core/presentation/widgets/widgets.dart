@@ -2,6 +2,7 @@ export 'discord_badge.dart';
 export 'tuli_button.dart';
 export 'tuli_card.dart';
 export 'tuli_empty_state.dart';
+export 'movie_card_widget.dart';
 export 'tuli_movie_list_tile.dart';
 export 'tuli_page_header.dart';
 export 'tuli_poster_image.dart';

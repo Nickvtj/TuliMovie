@@ -1,6 +1,19 @@
+import '../entities/discover_query_entity.dart';
 import '../entities/movie_details_entity.dart';
 import '../entities/movie_entity.dart';
 import '../entities/person_entity.dart';
+
+class DiscoverMoviesPageResult {
+  const DiscoverMoviesPageResult({
+    required this.movies,
+    required this.page,
+    required this.hasMore,
+  });
+
+  final List<MovieEntity> movies;
+  final int page;
+  final bool hasMore;
+}
 
 /// Contrato de domínio — presentation depende disto, não do TMDB.
 abstract interface class MovieRepository {
@@ -40,6 +53,8 @@ abstract interface class MovieRepository {
     int? runtimeLteMinutes,
     String? withGenres,
   });
+
+  Future<DiscoverMoviesPageResult> discoverMoviesQuery(DiscoverQueryEntity query);
 
   Future<List<MovieEntity>> getTrendingMovies({int page = 1, String language = 'pt-BR'});
 

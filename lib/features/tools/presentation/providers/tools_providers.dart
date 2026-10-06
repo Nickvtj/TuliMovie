@@ -18,6 +18,13 @@ final watchlistItemsProvider = StreamProvider<List<WatchlistItemEntity>>((ref) {
   return ref.watch(watchlistFirestoreProvider).watchItems();
 });
 
+final watchlistMovieIdsProvider = Provider<Set<int>>((ref) {
+  return ref.watch(watchlistItemsProvider).maybeWhen(
+        data: (items) => items.map((item) => item.tmdbMovieId).toSet(),
+        orElse: () => <int>{},
+      );
+});
+
 final cinepassStateProvider = StreamProvider<CinepassStateEntity>((ref) {
   return ref.watch(cinepassFirestoreProvider).watchState();
 });

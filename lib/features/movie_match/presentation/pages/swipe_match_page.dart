@@ -7,6 +7,7 @@ import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../domain/entities/match_room_entity.dart';
 import '../../domain/utils/match_consensus_calculator.dart';
 import '../providers/match_providers.dart';
+import '../widgets/match_active_filters_bar.dart';
 import '../widgets/match_celebration_dialog.dart';
 import '../widgets/match_swipe_card.dart';
 
@@ -32,7 +33,7 @@ class _SwipeMatchPageState extends ConsumerState<SwipeMatchPage> {
   void _checkMatch(MatchRoomEntity room, Map<String, Map<int, bool>> likes) {
     if (_celebrationShown || room.status == MatchRoomStatus.matched) return;
 
-    final movieId = MatchConsensusCalculator.findUnanimousMatch(
+    final movieId = MatchConsensusCalculator.findMatch(
       participantIds: room.participantIds,
       likesByUser: likes,
       candidateMovieIds: room.candidates.map((c) => c.tmdbMovieId).toList(),
@@ -119,6 +120,8 @@ class _SwipeMatchPageState extends ConsumerState<SwipeMatchPage> {
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
             child: Column(
               children: [
+                MatchActiveFiltersBar(filters: room.filters),
+                const SizedBox(height: 8),
                 Expanded(
                   child: CardSwiper(
                     controller: _swiperController,

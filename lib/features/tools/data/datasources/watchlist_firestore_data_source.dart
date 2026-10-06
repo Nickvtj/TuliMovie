@@ -14,6 +14,24 @@ class WatchlistFirestoreDataSource {
           .doc('shared')
           .collection('items');
 
+  Future<void> removeItem({required int tmdbMovieId}) async {
+    await _items.doc(tmdbMovieId.toString()).delete();
+  }
+
+  Future<void> addItem({
+    required int tmdbMovieId,
+    required String title,
+    String? posterPath,
+  }) async {
+    final docId = tmdbMovieId.toString();
+    await _items.doc(docId).set({
+      'tmdbMovieId': tmdbMovieId,
+      'title': title,
+      if (posterPath != null) 'posterPath': posterPath,
+      'addedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+  }
+
   Stream<List<WatchlistItemEntity>> watchItems() {
     return _items.orderBy('addedAt', descending: true).snapshots().map(
           (snapshot) => snapshot.docs

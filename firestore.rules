@@ -8,6 +8,11 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if signedIn();
       allow create, update: if signedIn() && request.auth.uid == userId;
+
+      match /watched/{movieId} {
+        allow read: if signedIn();
+        allow create, update, delete: if signedIn() && request.auth.uid == userId;
+      }
     }
 
     match /reviews/{reviewId} {

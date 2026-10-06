@@ -8,6 +8,7 @@ import '../../../reviews/presentation/providers/create_review_providers.dart';
 import '../../domain/entities/match_filters_entity.dart';
 import '../../domain/entities/match_room_entity.dart';
 import '../providers/match_providers.dart';
+import '../widgets/match_setup_sheet.dart';
 import 'swipe_match_page.dart';
 
 class MatchLobbyPage extends ConsumerStatefulWidget {
@@ -19,8 +20,7 @@ class MatchLobbyPage extends ConsumerStatefulWidget {
 
 class _MatchLobbyPageState extends ConsumerState<MatchLobbyPage> {
   final _joinController = TextEditingController();
-  int? _providerId;
-  int? _maxRuntime;
+  MatchFiltersEntity _filters = const MatchFiltersEntity();
   final _selectedFriendIds = <String>{};
   String? _activeRoomId;
   bool _isCreating = false;
@@ -44,14 +44,9 @@ class _MatchLobbyPageState extends ConsumerState<MatchLobbyPage> {
           .map((m) => m.id)
           .toList();
 
-      final filters = MatchFiltersEntity(
-        withWatchProviderId: _providerId,
-        maxRuntimeMinutes: _maxRuntime,
-      );
-
       final candidates = await ref.read(pickMatchCandidatesUseCaseProvider).call(
             participantIds: {user.id, ...participantIds},
-            filters: filters,
+            filters: _filters,
           );
 
       if (candidates.isEmpty) {
@@ -66,7 +61,7 @@ class _MatchLobbyPageState extends ConsumerState<MatchLobbyPage> {
       final room = await ref.read(matchRoomRepositoryProvider).createRoom(
             hostId: user.id,
             participantIds: participantIds,
-            filters: filters,
+            filters: _filters,
             candidates: candidates,
           );
 
@@ -123,28 +118,13 @@ class _MatchLobbyPageState extends ConsumerState<MatchLobbyPage> {
         children: [
           Text('Filtros da rodada', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),
-          DropdownButtonFormField<int?>(
-            value: _providerId,
-            decoration: const InputDecoration(labelText: 'Streaming'),
-            items: const [
-              DropdownMenuItem(value: null, child: Text('Qualquer')),
-              DropdownMenuItem(value: 8, child: Text('Netflix')),
-              DropdownMenuItem(value: 9, child: Text('Prime Video')),
-              DropdownMenuItem(value: 337, child: Text('Disney+')),
-              DropdownMenuItem(value: 384, child: Text('Max')),
-            ],
-            onChanged: (value) => setState(() => _providerId = value),
-          ),
-          const SizedBox(height: 12),
-          Text('Duração máxima: ${_maxRuntime ?? 180} min'),
-          Slider(
-            min: 60,
-            max: 180,
-            divisions: 4,
-            value: (_maxRuntime ?? 180).toDouble(),
-            activeColor: AppColors.gold,
-            label: '${_maxRuntime ?? 180} min',
-            onChanged: (v) => setState(() => _maxRuntime = v.round()),
+          OutlinedButton.icon(
+            onPressed: () async {
+              final updated = await MatchSetupSheet.show(context, initial: _filters);
+              if (updated != null) setState(() => _filters = updated);
+            },
+            icon: const Icon(Icons.tune),
+            label: const Text('Personalizar filtros'),
           ),
           const SizedBox(height: 16),
           Text('Quem está no sofá?', style: Theme.of(context).textTheme.titleMedium),

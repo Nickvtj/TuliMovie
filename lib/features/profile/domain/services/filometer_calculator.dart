@@ -7,11 +7,17 @@ abstract final class FilometerCalculator {
   static double hoursForUser({
     required String userId,
     required List<ReviewEntity> reviews,
+    Set<int> personalWatchedMovieIds = const {},
   }) {
-    final count = reviews.where((review) {
-      return review.participants.any((p) => p.userId == userId && p.hasSubmittedRating);
-    }).length;
+    final fromReviews = reviews
+        .where((review) {
+          return review.participants.any((p) => p.userId == userId && p.hasSubmittedRating);
+        })
+        .map((r) => r.tmdbMovieId)
+        .toSet();
 
-    return double.parse((count * defaultRuntimeHours).toStringAsFixed(1));
+    final uniqueCount = {...fromReviews, ...personalWatchedMovieIds}.length;
+
+    return double.parse((uniqueCount * defaultRuntimeHours).toStringAsFixed(1));
   }
 }

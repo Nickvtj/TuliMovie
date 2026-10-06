@@ -1,5 +1,6 @@
 import '../../../../core/config/env_config.dart';
 import '../../../../core/errors/app_exception.dart';
+import '../../domain/entities/discover_query_entity.dart';
 import '../../domain/entities/movie_details_entity.dart';
 import '../../domain/entities/movie_entity.dart';
 import '../../domain/entities/person_entity.dart';
@@ -129,16 +130,35 @@ class MovieRepositoryImpl implements MovieRepository {
     int? runtimeLteMinutes,
     String? withGenres,
   }) async {
-    try {
-      final result = await _remoteDataSource.discoverMovies(
+    final pageResult = await discoverMoviesQuery(
+      DiscoverQueryEntity(
         page: page,
         language: language,
         watchRegion: watchRegion,
-        withWatchProviderId: withWatchProviderId,
+        withWatchProviderIds:
+            withWatchProviderId == null ? const [] : [withWatchProviderId],
         runtimeLteMinutes: runtimeLteMinutes,
-        withGenres: withGenres,
+        withGenres: withGenres == null || withGenres.isEmpty
+            ? const []
+            : withGenres.split(',').map(int.parse).toList(),
+      ),
+    );
+    return pageResult.movies;
+  }
+
+  @override
+  Future<DiscoverMoviesPageResult> discoverMoviesQuery(
+    DiscoverQueryEntity query,
+  ) async {
+    try {
+      final result = await _remoteDataSource.discoverMoviesQuery(query);
+      final movies = MovieMapper.toEntityList(result.results);
+      final hasMore = result.page * 20 < result.totalResults;
+      return DiscoverMoviesPageResult(
+        movies: movies,
+        page: result.page,
+        hasMore: hasMore && movies.isNotEmpty,
       );
-      return MovieMapper.toEntityList(result.results);
     } on AppException {
       rethrow;
     } catch (e) {
