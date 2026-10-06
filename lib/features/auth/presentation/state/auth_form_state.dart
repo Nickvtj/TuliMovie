@@ -2,11 +2,14 @@ import 'package:equatable/equatable.dart';
 
 enum AuthFormMode { login, register }
 
+enum AuthFormStep { welcome, credentials }
+
 /// Distingue "não passou parâmetro" de "limpar erro" em [AuthFormState.copyWith].
 const _copyWithUnset = Object();
 
 class AuthFormState extends Equatable {
   const AuthFormState({
+    this.step = AuthFormStep.welcome,
     this.mode = AuthFormMode.login,
     this.email = '',
     this.password = '',
@@ -22,6 +25,7 @@ class AuthFormState extends Equatable {
     this.obscureConfirmPassword = true,
   });
 
+  final AuthFormStep step;
   final AuthFormMode mode;
   final String email;
   final String password;
@@ -38,7 +42,10 @@ class AuthFormState extends Equatable {
 
   bool get isRegister => mode == AuthFormMode.register;
 
+  bool get isWelcome => step == AuthFormStep.welcome;
+
   bool get canSubmit {
+    if (step != AuthFormStep.credentials) return false;
     if (isSubmitting) return false;
     if (emailError != null || passwordError != null) return false;
     if (isRegister && (confirmPasswordError != null || displayNameError != null)) {
@@ -52,6 +59,7 @@ class AuthFormState extends Equatable {
   }
 
   AuthFormState copyWith({
+    AuthFormStep? step,
     AuthFormMode? mode,
     String? email,
     String? password,
@@ -68,6 +76,7 @@ class AuthFormState extends Equatable {
     bool? obscureConfirmPassword,
   }) {
     return AuthFormState(
+      step: step ?? this.step,
       mode: mode ?? this.mode,
       email: email ?? this.email,
       password: password ?? this.password,
@@ -93,6 +102,7 @@ class AuthFormState extends Equatable {
 
   @override
   List<Object?> get props => [
+        step,
         mode,
         email,
         password,

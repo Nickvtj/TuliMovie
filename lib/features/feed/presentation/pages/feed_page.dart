@@ -75,21 +75,15 @@ class _FeedPageState extends ConsumerState<FeedPage> {
             else if (feed.reviews.isEmpty)
               SliverFillRemaining(
                 hasScrollBody: false,
-                child: Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Text(
-                      feed.errorMessage ??
-                          'Nenhuma avaliação ainda.\nBusque um filme e registre a sessão!',
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                  ),
+                child: TuliEmptyState(
+                  message: feed.errorMessage ??
+                      'Nenhuma avaliação ainda.\nToque no + para buscar um filme e avaliar!',
+                  icon: Icons.dynamic_feed_outlined,
                 ),
               )
             else
               SliverPadding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
                 sliver: SliverList.separated(
                   itemCount: feed.reviews.length + (feed.isLoadingMore ? 1 : 0),
                   separatorBuilder: (_, __) => const SizedBox(height: 14),

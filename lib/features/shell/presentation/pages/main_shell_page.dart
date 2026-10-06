@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/theme/app_colors.dart';
+import '../../../../core/presentation/widgets/widgets.dart';
+import '../../../discover/presentation/pages/discover_page.dart';
 import '../../../feed/presentation/pages/feed_page.dart';
 import '../../../movies/presentation/pages/movie_search_page.dart';
 import '../../../profile/presentation/pages/profile_page.dart';
@@ -18,10 +19,15 @@ class _MainShellPageState extends State<MainShellPage> {
 
   static const _pages = [
     FeedPage(),
+    DiscoverPage(),
     MovieSearchPage(),
     ToolsHubPage(),
     ProfilePage(),
   ];
+
+  void _onNavSelected(int index) {
+    setState(() => _index = index);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -30,32 +36,10 @@ class _MainShellPageState extends State<MainShellPage> {
         index: _index,
         children: _pages,
       ),
-      bottomNavigationBar: NavigationBar(
+      bottomNavigationBar: TuliShellNavBar(
         selectedIndex: _index,
-        indicatorColor: AppColors.gold.withValues(alpha: 0.2),
-        onDestinationSelected: (value) => setState(() => _index = value),
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.dynamic_feed_outlined),
-            selectedIcon: Icon(Icons.dynamic_feed),
-            label: 'Feed',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.search),
-            selectedIcon: Icon(Icons.manage_search),
-            label: 'Buscar',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.extension_outlined),
-            selectedIcon: Icon(Icons.extension),
-            label: 'Diversão',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.person_outline),
-            selectedIcon: Icon(Icons.person),
-            label: 'Perfil',
-          ),
-        ],
+        onDestinationSelected: _onNavSelected,
+        onPrimaryAction: () => _onNavSelected(TuliShellNavBar.primaryFabIndex),
       ),
     );
   }

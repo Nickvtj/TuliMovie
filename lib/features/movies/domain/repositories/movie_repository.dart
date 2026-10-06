@@ -40,4 +40,18 @@ abstract interface class MovieRepository {
     int? runtimeLteMinutes,
     String? withGenres,
   });
+
+  Future<List<MovieEntity>> getTrendingMovies({int page = 1, String language = 'pt-BR'});
+
+  Future<List<MovieEntity>> getNowPlayingMovies({
+    int page = 1,
+    String language = 'pt-BR',
+    String region = 'BR',
+  });
+
+  Future<List<MovieEntity>> getTopRatedMovies({
+    int page = 1,
+    String language = 'pt-BR',
+    String region = 'BR',
+  });
 }

@@ -20,31 +20,27 @@ class MovieSearchPage extends ConsumerWidget {
       body: SafeArea(
         child: Column(
           children: [
+            TuliPageHeader(
+              title: 'Avaliar filme',
+              subtitle: 'Encontre no TMDB e compartilhe com a turma',
+            ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Buscar', style: Theme.of(context).textTheme.headlineSmall),
-                  const SizedBox(height: 12),
-                  TuliInputField(
-                    label: 'Filmes',
-                    hint: 'Digite o nome do filme...',
-                    prefixIcon: const Icon(Icons.search, color: AppColors.textMuted),
-                    onChanged: notifier.onQueryChanged,
-                  ),
-                  if (!EnvConfig.hasTmdbApiKey) ...[
-                    const SizedBox(height: 12),
-                    Text(
-                      'TMDB: configure TMDB_API_KEY ao iniciar o app (veja scripts/run_web.cmd).',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppColors.gold,
-                          ),
-                    ),
-                  ],
-                ],
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: TuliInputField(
+                label: 'Buscar filme',
+                hint: 'Digite o nome do filme...',
+                prefixIcon: const Icon(Icons.search, color: AppColors.textMuted),
+                onChanged: notifier.onQueryChanged,
               ),
             ),
+            if (!EnvConfig.hasTmdbApiKey)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Text(
+                  'Configure TMDB_API_KEY ao iniciar (scripts/run_web.cmd).',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.gold),
+                ),
+              ),
             Expanded(child: _ResultsBody(search: search)),
           ],
         ),
@@ -61,11 +57,9 @@ class _ResultsBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (search.query.trim().length < 2) {
-      return Center(
-        child: Text(
-          'Comece digitando para buscar no TMDB',
-          style: Theme.of(context).textTheme.bodyMedium,
-        ),
+      return const TuliEmptyState(
+        message: 'Digite pelo menos 2 letras para buscar no catálogo TMDB.',
+        icon: Icons.add_circle_outline,
       );
     }
 
@@ -81,16 +75,22 @@ class _ResultsBody extends StatelessWidget {
     }
 
     if (search.results.isEmpty) {
-      return const Center(child: Text('Nenhum filme encontrado.'));
+      return const TuliEmptyState(message: 'Nenhum filme encontrado para essa busca.');
     }
 
     return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
       itemCount: search.results.length,
       separatorBuilder: (_, __) => const SizedBox(height: 10),
       itemBuilder: (context, index) {
         final movie = search.results[index];
-        return TuliCard(
+        final year = movie.releaseDate != null && movie.releaseDate!.length >= 4
+            ? movie.releaseDate!.substring(0, 4)
+            : null;
+        return TuliMovieListTile(
+          title: movie.title,
+          posterPath: movie.posterPath,
+          subtitle: year,
           onTap: () {
             Navigator.of(context).push(
               MaterialPageRoute<void>(
@@ -98,27 +98,6 @@ class _ResultsBody extends StatelessWidget {
               ),
             );
           },
-          padding: const EdgeInsets.all(12),
-          child: Row(
-            children: [
-              TuliPosterImage(posterPath: movie.posterPath, width: 56),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(movie.title, style: Theme.of(context).textTheme.titleMedium),
-                    if (movie.releaseDate != null && movie.releaseDate!.length >= 4)
-                      Text(
-                        movie.releaseDate!.substring(0, 4),
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                  ],
-                ),
-              ),
-              const Icon(Icons.chevron_right, color: AppColors.textMuted),
-            ],
-          ),
         );
       },
     );

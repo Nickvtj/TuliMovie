@@ -5,6 +5,7 @@ import '../../domain/entities/movie_entity.dart';
 import '../../domain/entities/person_entity.dart';
 import '../../domain/repositories/movie_repository.dart';
 import '../datasources/tmdb_remote_data_source.dart';
+import '../models/movie_model.dart';
 import '../mappers/movie_mapper.dart';
 import '../mappers/person_mapper.dart';
 
@@ -142,6 +143,52 @@ class MovieRepositoryImpl implements MovieRepository {
       rethrow;
     } catch (e) {
       throw AppException(message: 'Falha ao descobrir filmes.', cause: e);
+    }
+  }
+
+  @override
+  Future<List<MovieEntity>> getTrendingMovies({int page = 1, String language = 'pt-BR'}) {
+    return _fetchMovieList(
+      () => _remoteDataSource.getTrendingMovies(page: page, language: language),
+      'Falha ao carregar tendências.',
+    );
+  }
+
+  @override
+  Future<List<MovieEntity>> getNowPlayingMovies({
+    int page = 1,
+    String language = 'pt-BR',
+    String region = EnvConfig.tmdbDefaultRegion,
+  }) {
+    return _fetchMovieList(
+      () => _remoteDataSource.getNowPlayingMovies(page: page, language: language, region: region),
+      'Falha ao carregar em cartaz.',
+    );
+  }
+
+  @override
+  Future<List<MovieEntity>> getTopRatedMovies({
+    int page = 1,
+    String language = 'pt-BR',
+    String region = EnvConfig.tmdbDefaultRegion,
+  }) {
+    return _fetchMovieList(
+      () => _remoteDataSource.getTopRatedMovies(page: page, language: language, region: region),
+      'Falha ao carregar melhores notas.',
+    );
+  }
+
+  Future<List<MovieEntity>> _fetchMovieList(
+    Future<PaginatedMoviesModel> Function() fetch,
+    String errorMessage,
+  ) async {
+    try {
+      final result = await fetch();
+      return MovieMapper.toEntityList(result.results);
+    } on AppException {
+      rethrow;
+    } catch (e) {
+      throw AppException(message: errorMessage, cause: e);
     }
   }
 

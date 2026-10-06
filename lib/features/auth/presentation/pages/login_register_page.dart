@@ -27,7 +27,6 @@ class LoginRegisterPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final form = ref.watch(authFormNotifierProvider);
     final notifier = ref.read(authFormNotifierProvider.notifier);
-    final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
       body: Stack(
@@ -35,101 +34,219 @@ class LoginRegisterPage extends ConsumerWidget {
         children: [
           const AuthCinematicBackdrop(),
           SafeArea(
-            child: Center(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 440),
-                  child: GlassAuthPanel(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Text(
-                          'TuliMovie',
-                          style: textTheme.headlineMedium?.copyWith(
-                            color: AppColors.gold,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          'Cinema da turma — entre ou crie sua conta',
-                          style: textTheme.bodyMedium,
-                          textAlign: TextAlign.center,
-                        ),
-                        if (!isFirebaseReady) ...[
-                          const SizedBox(height: 12),
-                          Text(
-                            'Firebase ainda não configurado — rode flutterfire configure para login e feed.',
-                            style: textTheme.bodySmall?.copyWith(color: AppColors.neonRed),
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
-                        const SizedBox(height: 24),
-                        _ModeToggle(
-                          isRegister: form.isRegister,
-                          onChanged: (register) {
-                            if (register != form.isRegister) {
-                              notifier.toggleMode();
-                            }
-                          },
-                        ),
-                        const SizedBox(height: 20),
-                        AnimatedSwitcher(
-                          duration: AppDurations.normal,
-                          switchInCurve: Curves.easeOutCubic,
-                          switchOutCurve: Curves.easeInCubic,
-                          transitionBuilder: (child, animation) {
-                            return FadeTransition(
-                              opacity: animation,
-                              child: SlideTransition(
-                                position: Tween<Offset>(
-                                  begin: const Offset(0, 0.04),
-                                  end: Offset.zero,
-                                ).animate(animation),
-                                child: child,
-                              ),
-                            );
-                          },
-                          child: form.isRegister
-                              ? _RegisterFields(
-                                  key: const ValueKey('register'),
-                                  form: form,
-                                  notifier: notifier,
-                                )
-                              : _LoginFields(
-                                  key: const ValueKey('login'),
-                                  form: form,
-                                  notifier: notifier,
-                                ),
-                        ),
-                        if (_needsFirebaseAuthSetupHelp(form.formError)) ...[
-                          const SizedBox(height: 12),
-                          const FirebaseAuthSetupHelp(),
-                        ] else if (form.formError != null) ...[
-                          const SizedBox(height: 12),
-                          _FormErrorBanner(message: form.formError!),
-                        ],
-                        const SizedBox(height: 20),
-                        TuliButton(
-                          label: form.isRegister ? 'Criar conta' : 'Entrar',
-                          expand: true,
-                          isLoading: form.isSubmitting,
-                          onPressed: form.canSubmit
-                              ? () async {
-                                  await notifier.submit();
-                                }
-                              : null,
-                        ),
-                      ],
+            child: AnimatedSwitcher(
+              duration: AppDurations.normal,
+              switchInCurve: Curves.easeOutCubic,
+              switchOutCurve: Curves.easeInCubic,
+              child: form.isWelcome
+                  ? _AuthWelcomeView(
+                      key: const ValueKey('welcome'),
+                      onLogin: notifier.openLogin,
+                      onRegister: notifier.openRegister,
+                    )
+                  : _AuthCredentialsView(
+                      key: const ValueKey('credentials'),
+                      form: form,
+                      notifier: notifier,
                     ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AuthWelcomeView extends StatelessWidget {
+  const _AuthWelcomeView({
+    super.key,
+    required this.onLogin,
+    required this.onRegister,
+  });
+
+  final VoidCallback onLogin;
+  final VoidCallback onRegister;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return Column(
+      children: [
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(28, 32, 28, 16),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.local_movies_rounded, size: 72, color: AppColors.gold.withValues(alpha: 0.9)),
+                const SizedBox(height: 24),
+                Text(
+                  'TuliMovie',
+                  style: textTheme.displaySmall?.copyWith(
+                    color: AppColors.gold,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.5,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'O cinema da turma, num só lugar.',
+                  style: textTheme.titleMedium?.copyWith(color: AppColors.textPrimary),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Avalie filmes, reaja no feed e descubra o próximo filme juntos.',
+                  style: textTheme.bodyLarge?.copyWith(color: AppColors.textSecondary),
+                  textAlign: TextAlign.center,
+                ),
+                if (!isFirebaseReady) ...[
+                  const SizedBox(height: 20),
+                  Text(
+                    'Firebase não configurado — configure para login e feed.',
+                    style: textTheme.bodySmall?.copyWith(color: AppColors.neonRed),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 28),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 440),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                TuliButton(label: 'Entrar', expand: true, onPressed: onLogin),
+                const SizedBox(height: 12),
+                TuliButton(
+                  label: 'Criar conta',
+                  expand: true,
+                  variant: TuliButtonVariant.secondary,
+                  onPressed: onRegister,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _AuthCredentialsView extends StatelessWidget {
+  const _AuthCredentialsView({
+    super.key,
+    required this.form,
+    required this.notifier,
+  });
+
+  final AuthFormState form;
+  final AuthFormNotifier notifier;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return Column(
+      children: [
+        Align(
+          alignment: Alignment.centerLeft,
+          child: IconButton(
+            onPressed: notifier.backToWelcome,
+            icon: const Icon(Icons.arrow_back_rounded),
+            tooltip: 'Voltar',
+          ),
+        ),
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 440),
+                child: GlassAuthPanel(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        form.isRegister ? 'Cadastro' : 'Entrar',
+                        style: textTheme.headlineMedium?.copyWith(color: AppColors.gold),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        form.isRegister
+                            ? 'Junte-se à turma em segundos'
+                            : 'Bem-vindo de volta ao cinema',
+                        style: textTheme.bodyMedium,
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 20),
+                      _ModeToggle(
+                        isRegister: form.isRegister,
+                        onChanged: (register) {
+                          if (register != form.isRegister) notifier.toggleMode();
+                        },
+                      ),
+                      const SizedBox(height: 20),
+                      AnimatedSwitcher(
+                        duration: AppDurations.normal,
+                        switchInCurve: Curves.easeOutCubic,
+                        switchOutCurve: Curves.easeInCubic,
+                        transitionBuilder: (child, animation) {
+                          return FadeTransition(
+                            opacity: animation,
+                            child: SlideTransition(
+                              position: Tween<Offset>(
+                                begin: const Offset(0, 0.04),
+                                end: Offset.zero,
+                              ).animate(animation),
+                              child: child,
+                            ),
+                          );
+                        },
+                        child: form.isRegister
+                            ? _RegisterFields(
+                                key: const ValueKey('register'),
+                                form: form,
+                                notifier: notifier,
+                              )
+                            : _LoginFields(
+                                key: const ValueKey('login'),
+                                form: form,
+                                notifier: notifier,
+                              ),
+                      ),
+                      if (_needsFirebaseAuthSetupHelp(form.formError)) ...[
+                        const SizedBox(height: 12),
+                        const FirebaseAuthSetupHelp(),
+                      ] else if (form.formError != null) ...[
+                        const SizedBox(height: 12),
+                        _FormErrorBanner(message: form.formError!),
+                      ],
+                      const SizedBox(height: 20),
+                      TuliButton(
+                        label: form.isRegister ? 'Criar conta' : 'Entrar',
+                        expand: true,
+                        isLoading: form.isSubmitting,
+                        onPressed: form.canSubmit
+                            ? () async {
+                                await notifier.submit();
+                              }
+                            : null,
+                      ),
+                    ],
                   ),
                 ),
               ),
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

@@ -25,8 +25,7 @@ class MatchSwipeCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
               child: TuliPosterImage(
                 posterPath: candidate.posterPath,
-                width: double.infinity,
-                height: double.infinity,
+                expand: true,
                 fit: BoxFit.cover,
               ),
             ),

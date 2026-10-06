@@ -17,6 +17,11 @@ void main() {
     expect(cleared.passwordError, isNull);
   });
 
+  test('canSubmit false na tela de boas-vindas', () {
+    const welcome = AuthFormState(step: AuthFormStep.welcome);
+    expect(welcome.canSubmit, isFalse);
+  });
+
   test('copyWith mantém erro se parâmetro omitido', () {
     const withErrors = AuthFormState(emailError: 'E-mail inválido.');
 

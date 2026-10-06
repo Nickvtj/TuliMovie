@@ -17,10 +17,34 @@ class AuthFormNotifier extends StateNotifier<AuthFormState> {
   final LoginWithEmailUseCase _loginUseCase;
   final RegisterUseCase _registerUseCase;
 
-  void toggleMode() {
+  void openLogin() {
+    state = state.copyWith(
+      step: AuthFormStep.credentials,
+      mode: AuthFormMode.login,
+      clearFormError: true,
+    );
+  }
+
+  void openRegister() {
+    state = state.copyWith(
+      step: AuthFormStep.credentials,
+      mode: AuthFormMode.register,
+      clearFormError: true,
+    );
+  }
+
+  void backToWelcome() {
     state = AuthFormState(
-      mode: state.isRegister ? AuthFormMode.login : AuthFormMode.register,
+      step: AuthFormStep.welcome,
+      mode: state.mode,
       email: state.email,
+    );
+  }
+
+  void toggleMode() {
+    state = state.copyWith(
+      mode: state.isRegister ? AuthFormMode.login : AuthFormMode.register,
+      clearFormError: true,
     );
   }
 

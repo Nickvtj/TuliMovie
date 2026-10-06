@@ -41,6 +41,23 @@ abstract interface class TmdbRemoteDataSource {
     int? runtimeLteMinutes,
     String? withGenres,
   });
+
+  Future<PaginatedMoviesModel> getTrendingMovies({
+    int page = 1,
+    String language = 'pt-BR',
+  });
+
+  Future<PaginatedMoviesModel> getNowPlayingMovies({
+    int page = 1,
+    String language = 'pt-BR',
+    String region = 'BR',
+  });
+
+  Future<PaginatedMoviesModel> getTopRatedMovies({
+    int page = 1,
+    String language = 'pt-BR',
+    String region = 'BR',
+  });
 }
 
 class TmdbRemoteDataSourceImpl implements TmdbRemoteDataSource {
@@ -196,6 +213,44 @@ class TmdbRemoteDataSourceImpl implements TmdbRemoteDataSource {
       '/discover/movie',
       queryParameters: query,
       cacheTtl: const Duration(minutes: 20),
+    );
+  }
+
+  @override
+  Future<PaginatedMoviesModel> getTrendingMovies({
+    int page = 1,
+    String language = 'pt-BR',
+  }) {
+    return _getPaginatedMovies(
+      '/trending/movie/week',
+      queryParameters: {'page': page, 'language': language},
+      cacheTtl: const Duration(minutes: 30),
+    );
+  }
+
+  @override
+  Future<PaginatedMoviesModel> getNowPlayingMovies({
+    int page = 1,
+    String language = 'pt-BR',
+    String region = 'BR',
+  }) {
+    return _getPaginatedMovies(
+      '/movie/now_playing',
+      queryParameters: {'page': page, 'language': language, 'region': region},
+      cacheTtl: const Duration(minutes: 30),
+    );
+  }
+
+  @override
+  Future<PaginatedMoviesModel> getTopRatedMovies({
+    int page = 1,
+    String language = 'pt-BR',
+    String region = 'BR',
+  }) {
+    return _getPaginatedMovies(
+      '/movie/top_rated',
+      queryParameters: {'page': page, 'language': language, 'region': region},
+      cacheTtl: const Duration(hours: 2),
     );
   }
 

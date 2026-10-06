@@ -15,6 +15,7 @@ class TuliPosterImage extends StatelessWidget {
     this.height,
     this.borderRadius,
     this.fit = BoxFit.cover,
+    this.expand = false,
   });
 
   final String? posterPath;
@@ -23,29 +24,93 @@ class TuliPosterImage extends StatelessWidget {
   final BorderRadius? borderRadius;
   final BoxFit fit;
 
+  /// Preenche o espaço do pai (ex.: card de swipe). Evita passar [double.infinity] em [width].
+  final bool expand;
+
   @override
   Widget build(BuildContext context) {
-    final h = height ?? width * 1.5;
     final radius = borderRadius ?? AppShape.borderRadiusSm;
+
+    if (expand) {
+      return LayoutBuilder(
+        builder: (context, constraints) {
+          final w = constraints.maxWidth;
+          final h = constraints.maxHeight;
+          return _PosterBody(
+            posterPath: posterPath,
+            width: w,
+            height: h,
+            borderRadius: radius,
+            fit: fit,
+          );
+        },
+      );
+    }
+
+    final h = height ?? width * 1.5;
+    return _PosterBody(
+      posterPath: posterPath,
+      width: width,
+      height: h,
+      borderRadius: radius,
+      fit: fit,
+    );
+  }
+}
+
+class _PosterBody extends StatelessWidget {
+  const _PosterBody({
+    required this.posterPath,
+    required this.width,
+    required this.height,
+    required this.borderRadius,
+    required this.fit,
+  });
+
+  final String? posterPath;
+  final double width;
+  final double height;
+  final BorderRadius borderRadius;
+  final BoxFit fit;
+
+  int? get _memCacheWidth {
+    if (!width.isFinite || width <= 0) return 600;
+    return (width * 2).clamp(1, 2048).toInt();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final url = TmdbImageUrl.poster(posterPath);
 
     if (url == null) {
-      return _Placeholder(width: width, height: h, borderRadius: radius);
+      return _Placeholder(width: width, height: height, borderRadius: borderRadius, expand: true);
     }
 
     return ClipRRect(
-      borderRadius: radius,
+      borderRadius: borderRadius,
       child: SizedBox(
-        width: width,
-        height: h,
+        width: width.isFinite ? width : null,
+        height: height.isFinite ? height : null,
         child: CachedNetworkImage(
           imageUrl: url,
           fit: fit,
-          memCacheWidth: (width * 2).toInt(),
+          width: width.isFinite ? width : null,
+          height: height.isFinite ? height : null,
+          memCacheWidth: _memCacheWidth,
           placeholder: (_, __) => TuliShimmerLoader(
-            child: TuliShimmerBox(width: width, height: h, borderRadius: radius),
+            child: _Placeholder(
+              width: width,
+              height: height,
+              borderRadius: borderRadius,
+              expand: true,
+            ),
           ),
-          errorWidget: (_, __, ___) => _Placeholder(width: width, height: h, borderRadius: radius),
+          errorWidget: (_, __, ___) => _Placeholder(
+            width: width,
+            height: height,
+            borderRadius: borderRadius,
+            expand: true,
+          ),
         ),
       ),
     );
@@ -57,17 +122,19 @@ class _Placeholder extends StatelessWidget {
     required this.width,
     required this.height,
     required this.borderRadius,
+    this.expand = false,
   });
 
   final double width;
   final double height;
   final BorderRadius borderRadius;
+  final bool expand;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: width,
-      height: height,
+      width: expand || !width.isFinite ? double.infinity : width,
+      height: expand || !height.isFinite ? double.infinity : height,
       decoration: BoxDecoration(
         color: AppColors.surfaceMuted,
         borderRadius: borderRadius,
