@@ -4,7 +4,9 @@ enum RatingDimension {
   acting,
   visuals,
   soundtrack,
-  fun,
+  fun;
+
+  static List<RatingDimension> get all => values;
 }
 
 extension RatingDimensionLabels on RatingDimension {
@@ -27,6 +29,4 @@ extension RatingDimensionLabels on RatingDimension {
       RatingDimension.fun => 'O tempo passou rápido e valeu a pena?',
     };
   }
-
-  static List<RatingDimension> get all => RatingDimension.values;
 }

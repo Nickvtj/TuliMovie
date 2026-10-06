@@ -32,6 +32,7 @@ abstract final class DioExceptionMapper {
       case DioExceptionType.connectionTimeout:
       case DioExceptionType.sendTimeout:
       case DioExceptionType.receiveTimeout:
+      case DioExceptionType.transformTimeout:
         return AppException(
           message: 'Tempo de conexão esgotado. Tente novamente.',
           type: AppExceptionType.timeout,

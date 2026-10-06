@@ -1,17 +1,17 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../config/firebase_firestore_access.dart';
 import '../errors/app_exception.dart';
 import 'i_base_firestore_service.dart';
 
 /// Implementação única e tipada via callbacks [fromJson]/[toJson].
 class BaseFirestoreService implements IBaseFirestoreService {
-  BaseFirestoreService({FirebaseFirestore? firestore})
-      : _firestore = firestore ?? FirebaseFirestore.instance;
+  BaseFirestoreService({FirebaseFirestore? firestore}) : _firestoreOverride = firestore;
 
-  final FirebaseFirestore _firestore;
+  final FirebaseFirestore? _firestoreOverride;
 
   CollectionReference<Map<String, dynamic>> _collection(String path) {
-    return _firestore.collection(path);
+    return FirebaseFirestoreAccess.require(override: _firestoreOverride).collection(path);
   }
 
   @override
@@ -126,10 +126,30 @@ class BaseFirestoreService implements IBaseFirestoreService {
   }
 
   AppException _mapFirebaseError(FirebaseException e) {
+    final message = switch (e.code) {
+      'permission-denied' =>
+        'Sem permissão no Firestore. Crie o banco e publique as regras (firestore.rules).',
+      'unavailable' =>
+        'Firestore offline ou bloqueado. Teste outro navegador ou desative adblock.',
+      'failed-precondition' =>
+        'Firestore não configurado. Console → Firestore → Criar banco de dados.',
+      'not-found' => 'Documento não encontrado no Firestore.',
+      _ => _firestoreMessageFallback(e),
+    };
+
     return AppException(
-      message: e.message ?? 'Erro no Firestore.',
+      message: message,
       type: AppExceptionType.server,
       cause: e,
     );
+  }
+
+  static String _firestoreMessageFallback(FirebaseException e) {
+    final raw = e.message?.trim() ?? '';
+    if (raw.toLowerCase().contains('offline')) {
+      return 'Firestore offline ou bloqueado. Desative extensões que bloqueiam '
+          'firestore.googleapis.com e recarregue a página.';
+    }
+    return raw.isNotEmpty ? raw : 'Erro no Firestore (${e.code}).';
   }
 }

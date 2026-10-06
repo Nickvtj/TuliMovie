@@ -1,3 +1,4 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 
@@ -5,12 +6,20 @@ import '../config/env_config.dart';
 
 /// Web Push (PWA iOS 16.4+) + Android via FCM.
 class PushNotificationService {
-  PushNotificationService({FirebaseMessaging? messaging})
-      : _messaging = messaging ?? FirebaseMessaging.instance;
+  PushNotificationService({FirebaseMessaging? messaging}) : _messagingOverride = messaging;
 
-  final FirebaseMessaging _messaging;
+  final FirebaseMessaging? _messagingOverride;
+
+  FirebaseMessaging? get _messaging {
+    if (_messagingOverride != null) return _messagingOverride;
+    if (Firebase.apps.isEmpty) return null;
+    return FirebaseMessaging.instance;
+  }
 
   Future<void> initialize() async {
+    final messaging = _messaging;
+    if (messaging == null) return;
+
     if (kIsWeb && !EnvConfig.hasFcmVapidKey) {
       if (kDebugMode) {
         debugPrint('FCM: defina --dart-define=FCM_VAPID_KEY=... para Web Push.');
@@ -19,7 +28,7 @@ class PushNotificationService {
     }
 
     try {
-      final settings = await _messaging.requestPermission(
+      final settings = await messaging.requestPermission(
         alert: true,
         badge: true,
         sound: true,
@@ -30,9 +39,9 @@ class PushNotificationService {
       }
 
       if (kIsWeb && EnvConfig.hasFcmVapidKey) {
-        await _messaging.getToken(vapidKey: EnvConfig.fcmVapidKey);
+        await messaging.getToken(vapidKey: EnvConfig.fcmVapidKey);
       } else {
-        await _messaging.getToken();
+        await messaging.getToken();
       }
 
       FirebaseMessaging.onMessage.listen((message) {

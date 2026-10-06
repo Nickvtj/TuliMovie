@@ -51,7 +51,7 @@ abstract final class AppGradients {
     ],
   );
 
-  static LinearGradient radialGoldGlow({Alignment center = Alignment.center}) {
+  static RadialGradient radialGoldGlow({Alignment center = Alignment.center}) {
     return RadialGradient(
       center: center,
       radius: 0.85,

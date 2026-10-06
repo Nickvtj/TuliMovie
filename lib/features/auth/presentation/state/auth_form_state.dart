@@ -2,6 +2,9 @@ import 'package:equatable/equatable.dart';
 
 enum AuthFormMode { login, register }
 
+/// Distingue "não passou parâmetro" de "limpar erro" em [AuthFormState.copyWith].
+const _copyWithUnset = Object();
+
 class AuthFormState extends Equatable {
   const AuthFormState({
     this.mode = AuthFormMode.login,
@@ -54,10 +57,10 @@ class AuthFormState extends Equatable {
     String? password,
     String? confirmPassword,
     String? displayName,
-    String? emailError,
-    String? passwordError,
-    String? confirmPasswordError,
-    String? displayNameError,
+    Object? emailError = _copyWithUnset,
+    Object? passwordError = _copyWithUnset,
+    Object? confirmPasswordError = _copyWithUnset,
+    Object? displayNameError = _copyWithUnset,
     bool? isSubmitting,
     String? formError,
     bool clearFormError = false,
@@ -70,10 +73,17 @@ class AuthFormState extends Equatable {
       password: password ?? this.password,
       confirmPassword: confirmPassword ?? this.confirmPassword,
       displayName: displayName ?? this.displayName,
-      emailError: emailError ?? this.emailError,
-      passwordError: passwordError ?? this.passwordError,
-      confirmPasswordError: confirmPasswordError ?? this.confirmPasswordError,
-      displayNameError: displayNameError ?? this.displayNameError,
+      emailError:
+          identical(emailError, _copyWithUnset) ? this.emailError : emailError as String?,
+      passwordError: identical(passwordError, _copyWithUnset)
+          ? this.passwordError
+          : passwordError as String?,
+      confirmPasswordError: identical(confirmPasswordError, _copyWithUnset)
+          ? this.confirmPasswordError
+          : confirmPasswordError as String?,
+      displayNameError: identical(displayNameError, _copyWithUnset)
+          ? this.displayNameError
+          : displayNameError as String?,
       isSubmitting: isSubmitting ?? this.isSubmitting,
       formError: clearFormError ? null : formError ?? this.formError,
       obscurePassword: obscurePassword ?? this.obscurePassword,

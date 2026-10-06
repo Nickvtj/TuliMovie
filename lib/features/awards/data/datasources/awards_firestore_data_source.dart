@@ -1,13 +1,16 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-class AwardsFirestoreDataSource {
-  AwardsFirestoreDataSource({FirebaseFirestore? firestore})
-      : _firestore = firestore ?? FirebaseFirestore.instance;
+import '../../../../core/config/firebase_firestore_access.dart';
 
-  final FirebaseFirestore _firestore;
+class AwardsFirestoreDataSource {
+  AwardsFirestoreDataSource({FirebaseFirestore? firestore}) : _firestoreOverride = firestore;
+
+  final FirebaseFirestore? _firestoreOverride;
 
   DocumentReference<Map<String, dynamic>> _yearDoc(int year) =>
-      _firestore.collection('awards').doc(year.toString());
+      FirebaseFirestoreAccess.require(override: _firestoreOverride)
+          .collection('awards')
+          .doc(year.toString());
 
   Future<void> voteComicCategory({
     required int year,

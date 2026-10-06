@@ -1,13 +1,18 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../../../../core/config/firebase_firestore_access.dart';
 import '../../domain/entities/watchlist_item_entity.dart';
 
 class WatchlistFirestoreDataSource {
-  WatchlistFirestoreDataSource({FirebaseFirestore? firestore})
-      : _firestore = firestore ?? FirebaseFirestore.instance;
+  WatchlistFirestoreDataSource({FirebaseFirestore? firestore}) : _firestoreOverride = firestore;
+
+  final FirebaseFirestore? _firestoreOverride;
 
   CollectionReference<Map<String, dynamic>> get _items =>
-      _firestore.collection('watchlist').doc('shared').collection('items');
+      FirebaseFirestoreAccess.require(override: _firestoreOverride)
+          .collection('watchlist')
+          .doc('shared')
+          .collection('items');
 
   Stream<List<WatchlistItemEntity>> watchItems() {
     return _items.orderBy('addedAt', descending: true).snapshots().map(

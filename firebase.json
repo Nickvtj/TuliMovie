@@ -1,4 +1,7 @@
 {
+  "firestore": {
+    "rules": "firestore.rules"
+  },
   "hosting": {
     "public": "build/web",
     "ignore": [
@@ -41,5 +44,27 @@
         ]
       }
     ]
+  },
+  "flutter": {
+    "platforms": {
+      "android": {
+        "buildConfigurations": {
+          ".": {
+            "projectId": "tulimovie",
+            "appId": "1:424657617515:android:829218e93891a19676672e",
+            "fileOutput": "android/app/google-services.json"
+          }
+        }
+      },
+      "dart": {
+        "lib/core/config/firebase_options.dart": {
+          "projectId": "tulimovie",
+          "configurations": {
+            "android": "1:424657617515:android:829218e93891a19676672e",
+            "web": "1:424657617515:web:2eb79824fa312ea476672e"
+          }
+        }
+      }
+    }
   }
 }

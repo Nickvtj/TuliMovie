@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/config/env_config.dart';
 import '../../../../core/presentation/widgets/widgets.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../notifiers/movie_search_notifier.dart';
@@ -32,6 +33,15 @@ class MovieSearchPage extends ConsumerWidget {
                     prefixIcon: const Icon(Icons.search, color: AppColors.textMuted),
                     onChanged: notifier.onQueryChanged,
                   ),
+                  if (!EnvConfig.hasTmdbApiKey) ...[
+                    const SizedBox(height: 12),
+                    Text(
+                      'TMDB: configure TMDB_API_KEY ao iniciar o app (veja scripts/run_web.cmd).',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: AppColors.gold,
+                          ),
+                    ),
+                  ],
                 ],
               ),
             ),

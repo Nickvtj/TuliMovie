@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../../../core/errors/app_exception.dart';
@@ -90,6 +91,13 @@ class AuthRepositoryImpl implements AuthRepository {
     final email = firebaseUser.email ?? '';
     final displayNameFallback = firebaseUser.displayName ?? email.split('@').first;
 
+    UserEntity entityFromAuth() => UserEntity(
+          id: uid,
+          email: email,
+          displayName: displayNameFallback,
+          photoUrl: firebaseUser.photoURL,
+        );
+
     try {
       final stored = await _userFirestore.getUser(uid);
       if (stored != null) {
@@ -106,10 +114,29 @@ class AuthRepositoryImpl implements AuthRepository {
       );
       await _userFirestore.upsertUser(bootstrap);
       return UserMapper.toEntity(bootstrap);
-    } on AppException {
+    } on AppException catch (e) {
+      if (_allowAuthOnlyFallback(e)) {
+        return entityFromAuth();
+      }
       rethrow;
     } catch (e) {
       throw AppException(message: 'Erro ao carregar perfil.', cause: e);
     }
+  }
+
+  /// Auth OK, Firestore indisponível — entra no app; perfil sincroniza depois.
+  bool _allowAuthOnlyFallback(AppException e) {
+    final msg = e.message.toLowerCase();
+    if (msg.contains('offline') ||
+        msg.contains('indisponível') ||
+        msg.contains('bloqueado') ||
+        msg.contains('firestore offline')) {
+      return true;
+    }
+    if (e.cause is FirebaseException) {
+      final code = (e.cause! as FirebaseException).code;
+      return code == 'unavailable';
+    }
+    return false;
   }
 }

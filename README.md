@@ -26,10 +26,10 @@ lib/
 │           ├── tuli_shimmer_loader.dart
 │           └── widgets.dart
 └── features/
-    └── design_system/   # showcase temporário Fase 1
-        └── presentation/
-            └── pages/
-                └── design_system_showcase_page.dart
+    ├── auth/
+    ├── feed/
+    ├── movies/
+    └── …
 ```
 
 ## Rodar
@@ -40,11 +40,19 @@ Se ainda não existir pasta `android/` / `web/icons/`, na raiz:
 flutter create . --org com.tulimovie --project-name tulimovie --platforms=android,web
 flutter pub get
 flutter run -d chrome --dart-define=TMDB_API_KEY=sua_chave_v3 --dart-define=FCM_VAPID_KEY=sua_vapid
+
+**Dev sem digitar a chave toda vez:** edite `dart_defines.json` (só na sua máquina, não vai pro Git) com a **API Key v3** e rode:
+
+- Windows CMD: `run.cmd` ou `scripts\run_web.cmd`
+- **Git Bash:** `./run.sh`
+- Cursor/VS Code: **F5** (`TuliMovie (Chrome + TMDB)`)
+
+Use a **API Key (v3)**, não o *Read Access Token* (JWT).
 ```
 
 Release completo: [docs/RELEASE.md](docs/RELEASE.md)
 
-Firebase: `flutterfire configure` gera `lib/core/config/firebase_options.dart`. Ative **Authentication → E-mail/Senha** e crie índice/coleção `users`.
+Firebase: passo a passo em [docs/FIREBASE_SETUP.md](docs/FIREBASE_SETUP.md) — `scripts\firebase_login.cmd` e depois `scripts\firebase_setup.cmd tulimovie`.
 
 ## Auth (Fase 3)
 

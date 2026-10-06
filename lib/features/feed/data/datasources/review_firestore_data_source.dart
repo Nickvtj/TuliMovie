@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../../../../core/config/firebase_firestore_access.dart';
 import '../models/review_model.dart';
 
 class FeedPageSnapshot {
@@ -36,15 +37,14 @@ abstract interface class ReviewFirestoreDataSource {
 }
 
 class ReviewFirestoreDataSourceImpl implements ReviewFirestoreDataSource {
-  ReviewFirestoreDataSourceImpl({FirebaseFirestore? firestore})
-      : _firestore = firestore ?? FirebaseFirestore.instance;
+  ReviewFirestoreDataSourceImpl({FirebaseFirestore? firestore}) : _firestoreOverride = firestore;
 
   static const collectionPath = 'reviews';
 
-  final FirebaseFirestore _firestore;
+  final FirebaseFirestore? _firestoreOverride;
 
   CollectionReference<Map<String, dynamic>> get _collection =>
-      _firestore.collection(collectionPath);
+      FirebaseFirestoreAccess.require(override: _firestoreOverride).collection(collectionPath);
 
   @override
   Future<FeedPageSnapshot> fetchFeedPage({
@@ -133,7 +133,7 @@ class ReviewFirestoreDataSourceImpl implements ReviewFirestoreDataSource {
   }) async {
     final docRef = _collection.doc(reviewId);
 
-    await _firestore.runTransaction((transaction) async {
+    await FirebaseFirestoreAccess.require(override: _firestoreOverride).runTransaction((transaction) async {
       final snap = await transaction.get(docRef);
       if (!snap.exists) return;
 

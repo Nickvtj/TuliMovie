@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "424657617515",
+    "project_id": "tulimovie",
+    "storage_bucket": "tulimovie.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:424657617515:android:829218e93891a19676672e",
+        "android_client_info": {
+          "package_name": "com.tulimovie.tulimovie"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCb7dWGwp_WPEqj7ayJMgKZwViBwBMFPnk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

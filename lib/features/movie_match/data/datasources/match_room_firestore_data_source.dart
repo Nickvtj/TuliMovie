@@ -1,18 +1,18 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../../../../core/config/firebase_firestore_access.dart';
 import '../../domain/entities/match_room_entity.dart';
 import '../models/match_room_model.dart';
 
 class MatchRoomFirestoreDataSource {
-  MatchRoomFirestoreDataSource({FirebaseFirestore? firestore})
-      : _firestore = firestore ?? FirebaseFirestore.instance;
+  MatchRoomFirestoreDataSource({FirebaseFirestore? firestore}) : _firestoreOverride = firestore;
 
   static const collectionPath = 'matches';
 
-  final FirebaseFirestore _firestore;
+  final FirebaseFirestore? _firestoreOverride;
 
   CollectionReference<Map<String, dynamic>> get _rooms =>
-      _firestore.collection(collectionPath);
+      FirebaseFirestoreAccess.require(override: _firestoreOverride).collection(collectionPath);
 
   Stream<MatchRoomModel?> watchRoom(String roomId) {
     return _rooms.doc(roomId).snapshots().map((snap) {
@@ -70,7 +70,7 @@ class MatchRoomFirestoreDataSource {
     required bool liked,
   }) async {
     final ref = _rooms.doc(roomId).collection('swipes').doc(userId);
-    await _firestore.runTransaction((tx) async {
+    await FirebaseFirestoreAccess.require(override: _firestoreOverride).runTransaction((tx) async {
       final snap = await tx.get(ref);
       final current = Map<String, dynamic>.from(
         (snap.data()?['votes'] as Map<String, dynamic>?) ?? {},

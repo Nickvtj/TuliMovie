@@ -291,7 +291,7 @@ class _RatingsStep extends StatelessWidget {
                 onChanged: (rating) => onChanged(dimension, rating),
               ),
               Slider(
-                value: (value <= 0 ? 3 : value).clamp(1, 5),
+                value: (value <= 0 ? 3.0 : value).clamp(1.0, 5.0).toDouble(),
                 min: 1,
                 max: 5,
                 divisions: 8,

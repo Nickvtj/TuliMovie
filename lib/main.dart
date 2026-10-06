@@ -10,7 +10,9 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await bootstrapFirebase();
   await configureDependencies();
-  await bootstrapPushNotifications(sl<PushNotificationService>());
+  if (isFirebaseReady) {
+    await bootstrapPushNotifications(sl<PushNotificationService>());
+  }
   runApp(
     const ProviderScope(
       child: TuliMovieApp(),

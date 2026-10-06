@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/config/env_config.dart';
+import '../../../../core/errors/app_exception.dart';
 import '../../domain/entities/movie_entity.dart';
 import '../../domain/repositories/movie_repository.dart';
 
@@ -53,12 +55,26 @@ class MovieSearchNotifier extends StateNotifier<MovieSearchState> {
       return;
     }
 
+    if (!EnvConfig.hasTmdbApiKey) {
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage:
+            'Chave TMDB ausente. Pare o app (q) e rode de novo com:\n'
+            'flutter run -d chrome --dart-define=TMDB_API_KEY=sua_chave_v3',
+      );
+      return;
+    }
+
     state = state.copyWith(isLoading: true, clearError: true);
     try {
       final results = await _repository.searchMovies(query: query);
       if (state.query.trim() != query) return;
       state = state.copyWith(results: results, isLoading: false);
+    } on AppException catch (e) {
+      if (state.query.trim() != query) return;
+      state = state.copyWith(isLoading: false, errorMessage: e.message);
     } catch (_) {
+      if (state.query.trim() != query) return;
       state = state.copyWith(
         isLoading: false,
         errorMessage: 'Erro na busca. Verifique a chave TMDB.',

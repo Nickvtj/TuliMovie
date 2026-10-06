@@ -1,7 +1,7 @@
 import '../entities/review_entity.dart';
 
 /// Cursor opaco para paginação — presentation não depende do Firestore.
-abstract interface class FeedCursor {
+abstract class FeedCursor {
   const FeedCursor();
 }
 

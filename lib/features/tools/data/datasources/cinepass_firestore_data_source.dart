@@ -1,13 +1,17 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../../../../core/config/firebase_firestore_access.dart';
 import '../../domain/entities/cinepass_entity.dart';
 
 class CinepassFirestoreDataSource {
-  CinepassFirestoreDataSource({FirebaseFirestore? firestore})
-      : _firestore = firestore ?? FirebaseFirestore.instance;
+  CinepassFirestoreDataSource({FirebaseFirestore? firestore}) : _firestoreOverride = firestore;
+
+  final FirebaseFirestore? _firestoreOverride;
 
   DocumentReference<Map<String, dynamic>> get _doc =>
-      _firestore.collection('cinepass').doc('queue');
+      FirebaseFirestoreAccess.require(override: _firestoreOverride)
+          .collection('cinepass')
+          .doc('queue');
 
   Stream<CinepassStateEntity> watchState() {
     return _doc.snapshots().map((snap) {

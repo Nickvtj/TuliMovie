@@ -1,5 +1,6 @@
 # Flutter
 .dart_tool/
+.dart_tool/chrome-device/
 .flutter-plugins
 .flutter-plugins-dependencies
 .packages
@@ -10,13 +11,14 @@ build/
 
 # IDE
 .idea/
-.vscode/
+.vscode/*
+!.vscode/launch.json
 *.swp
 
 # Secrets
 .env
 *.env
-lib/firebase_options.dart
+dart_defines.json
 
 # OS
 .DS_Store

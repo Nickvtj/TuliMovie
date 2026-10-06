@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/config/firebase_bootstrap.dart';
 import '../../../../core/presentation/widgets/widgets.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -8,7 +9,16 @@ import '../notifiers/auth_form_notifier.dart';
 import '../providers/auth_providers.dart';
 import '../state/auth_form_state.dart';
 import '../widgets/auth_cinematic_backdrop.dart';
+import '../widgets/firebase_auth_setup_help.dart';
 import '../widgets/glass_auth_panel.dart';
+
+bool _needsFirebaseAuthSetupHelp(String? formError) {
+  if (formError == null) return false;
+  final lower = formError.toLowerCase();
+  return lower.contains('configuration-not-found') ||
+      lower.contains('authentication ainda não foi ativado') ||
+      lower.contains('e-mail/senha');
+}
 
 class LoginRegisterPage extends ConsumerWidget {
   const LoginRegisterPage({super.key});
@@ -47,6 +57,14 @@ class LoginRegisterPage extends ConsumerWidget {
                           style: textTheme.bodyMedium,
                           textAlign: TextAlign.center,
                         ),
+                        if (!isFirebaseReady) ...[
+                          const SizedBox(height: 12),
+                          Text(
+                            'Firebase ainda não configurado — rode flutterfire configure para login e feed.',
+                            style: textTheme.bodySmall?.copyWith(color: AppColors.neonRed),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
                         const SizedBox(height: 24),
                         _ModeToggle(
                           isRegister: form.isRegister,
@@ -85,7 +103,10 @@ class LoginRegisterPage extends ConsumerWidget {
                                   notifier: notifier,
                                 ),
                         ),
-                        if (form.formError != null) ...[
+                        if (_needsFirebaseAuthSetupHelp(form.formError)) ...[
+                          const SizedBox(height: 12),
+                          const FirebaseAuthSetupHelp(),
+                        ] else if (form.formError != null) ...[
                           const SizedBox(height: 12),
                           _FormErrorBanner(message: form.formError!),
                         ],
