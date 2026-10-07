@@ -23,6 +23,7 @@ class ReviewWriteRepositoryImpl implements ReviewWriteRepository {
     required String comment,
     required bool containsSpoiler,
     required RatingAnswerSet authorAnswers,
+    required List<String> groupIds,
   }) async {
     final releaseYear = _parseYear(movie.movie.releaseDate);
 
@@ -45,6 +46,8 @@ class ReviewWriteRepositoryImpl implements ReviewWriteRepository {
       ),
     ];
 
+    final resolvedGroups = groupIds.where((id) => id.isNotEmpty).toList();
+
     final model = ReviewModel(
       id: '',
       tmdbMovieId: movie.movie.id,
@@ -60,6 +63,8 @@ class ReviewWriteRepositoryImpl implements ReviewWriteRepository {
         for (final dimension in RatingDimension.all)
           dimension.name: authorAnswers.answers[dimension]!,
       },
+      groupId: resolvedGroups.isNotEmpty ? resolvedGroups.first : null,
+      groupIds: resolvedGroups,
     );
 
     final saved = await _reviews.createReview(model);

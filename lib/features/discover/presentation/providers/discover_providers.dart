@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/di/injection.dart';
-import '../../../auth/presentation/providers/auth_providers.dart';
+import '../../../groups/presentation/providers/group_providers.dart';
 import '../../../feed/domain/repositories/review_repository.dart';
 import '../../../movies/domain/repositories/movie_repository.dart';
 import '../../../profile/domain/repositories/watched_movies_repository.dart';
@@ -39,7 +39,9 @@ final discoverFiltersProvider =
 
 final discoverCarouselsProvider = FutureProvider.autoDispose<List<DiscoverSectionEntity>>((ref) {
   final filters = ref.watch(discoverFiltersProvider);
-  return ref.watch(getDiscoverCarouselsUseCaseProvider).call(filters);
+  final groupId = ref.watch(activeGroupIdProvider);
+  if (groupId == null) return Future.value(const []);
+  return ref.watch(getDiscoverCarouselsUseCaseProvider).call(filters, groupId: groupId);
 });
 
 String? streamingLabelForFilters(DiscoverFilterEntity filters) {

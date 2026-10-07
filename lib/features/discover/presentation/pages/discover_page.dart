@@ -9,12 +9,17 @@ import '../../../../core/di/injection.dart';
 import '../../../../core/network/tuli_http_client.dart';
 import '../../../../core/presentation/widgets/widgets.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_theme.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
+import '../../../groups/presentation/providers/group_providers.dart';
+import '../../../movies/domain/constants/tmdb_genres.dart';
 import '../../../movies/domain/entities/movie_entity.dart';
 import '../../../movies/presentation/pages/movie_details_page.dart';
 import '../../../profile/presentation/providers/profile_providers.dart';
+import '../../../groups/presentation/pages/group_hub_page.dart';
 import '../../../tools/presentation/pages/watchlist_page.dart';
 import '../../../tools/presentation/providers/tools_providers.dart';
+import '../../../tools/presentation/widgets/watchlist_group_picker_sheet.dart';
 import '../providers/discover_providers.dart';
 import '../widgets/discover_chips_bar_widget.dart';
 import '../widgets/discover_filter_bottom_sheet.dart';
@@ -115,18 +120,44 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
   }
 
   Future<void> _onToggleWatchlist(MovieEntity movie) async {
-    final inList = ref.read(watchlistMovieIdsProvider).contains(movie.id);
+    final groups = ref.read(userGroupsProvider).valueOrNull ?? [];
+    if (groups.isEmpty) {
+      _showSnack('Entre em uma turma em Minha turma para usar a watchlist.');
+      return;
+    }
+
+    final before = ref.read(watchlistGroupsForMovieProvider(movie.id));
+
     try {
-      final added = await ref.read(toggleWatchlistItemUseCaseProvider).call(
-            tmdbMovieId: movie.id,
-            title: movie.title,
-            posterPath: movie.posterPath,
-            isCurrentlyInList: inList,
-          );
+      final after = await WatchlistGroupPickerSheet.show(
+        context,
+        groups: groups,
+        title: 'Watchlist por turma',
+        initialSelectedIds: before,
+        applyLabel: 'Salvar',
+      );
+      if (after == null || !mounted) return;
+
+      final toggle = ref.read(toggleWatchlistItemUseCaseProvider);
+      for (final group in groups) {
+        final was = before.contains(group.id);
+        final now = after.contains(group.id);
+        if (was == now) continue;
+        await toggle.call(
+          groupId: group.id,
+          tmdbMovieId: movie.id,
+          title: movie.title,
+          posterPath: movie.posterPath,
+          isCurrentlyInList: was,
+        );
+      }
+
       if (!mounted) return;
-      if (added) {
+      if (after.isEmpty) {
+        _showSnack('${movie.title} removido das watchlists selecionadas.');
+      } else {
         _showSnack(
-          '${movie.title} na watchlist do grupo.',
+          '${movie.title} atualizado na watchlist.',
           action: SnackBarAction(
             label: 'Ver lista',
             onPressed: () {
@@ -136,8 +167,6 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
             },
           ),
         );
-      } else {
-        _showSnack('${movie.title} removido da watchlist.');
       }
     } catch (_) {
       if (!mounted) return;
@@ -192,22 +221,20 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
     final streamLabel = streamingLabelForFilters(filters);
     final watchedIds = ref.watch(userWatchedMovieIdsProvider).valueOrNull ?? {};
     final watchlistIds = ref.watch(watchlistMovieIdsProvider);
-    final watchlistCount = ref.watch(watchlistItemsProvider).maybeWhen(
-          data: (items) => items.length,
-          orElse: () => 0,
-        );
+    final watchlistCount = ref.watch(watchlistMovieIdsProvider).length;
 
     ref.listen(discoverFiltersProvider, (previous, next) {
       if (previous != next) _refreshFeed();
     });
 
     return Scaffold(
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _spinLuck,
-        backgroundColor: AppColors.gold,
-        foregroundColor: Colors.black,
-        icon: const Icon(Icons.casino_outlined),
-        label: const Text('Girar a sorte'),
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: TuliGlowFab(
+          icon: Icons.casino_outlined,
+          label: 'Girar a sorte',
+          onPressed: _spinLuck,
+        ),
       ),
       body: SafeArea(
         child: RefreshIndicator(
@@ -216,52 +243,27 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
           child: CustomScrollView(
             slivers: [
               SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 8, 0),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Descubra', style: Theme.of(context).textTheme.headlineSmall),
-                            const SizedBox(height: 6),
-                            Text(
-                              'Ideias frescas para a próxima sessão da turma',
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    color: AppColors.textSecondary,
-                                  ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      IconButton(
-                        tooltip: 'Watchlist do grupo',
-                        onPressed: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute<void>(builder: (_) => const WatchlistPage()),
-                          );
-                        },
-                        icon: Badge(
-                          isLabelVisible: watchlistCount > 0,
-                          label: Text('$watchlistCount'),
-                          child: const Icon(Icons.bookmark, color: AppColors.gold),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              SliverToBoxAdapter(
-                child: DiscoverChipsBarWidget(
-                  selectedGenreId: filters.primaryGenreId,
-                  onGenreSelected: (genreId) {
-                    ref.read(discoverFiltersProvider.notifier).state = genreId == null
-                        ? filters.copyWith(clearPrimaryGenre: true)
-                        : filters.copyWith(primaryGenreId: genreId);
+                child: TuliSectionHeader(
+                  title: 'Descubra',
+                  subtitle: 'Ideias frescas para a próxima sessão da turma',
+                  trailingActions: [
+                    TuliIconButtonCircle(
+                      icon: Icons.groups_rounded,
+                      tooltip: 'Turma',
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute<void>(builder: (_) => const GroupHubPage()),
+                        );
+                      },
+                    ),
+                  ],
+                  bookmarkCount: watchlistCount,
+                  onBookmarkTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute<void>(builder: (_) => const WatchlistPage()),
+                    );
                   },
-                  onOpenAdvancedFilters: () async {
+                  onFilterTap: () async {
                     final updated = await DiscoverFilterBottomSheet.show(
                       context,
                       initial: filters,
@@ -270,6 +272,19 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
                       ref.read(discoverFiltersProvider.notifier).state = updated;
                     }
                   },
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: AppSpacing.lg),
+                  child: DiscoverChipsBarWidget(
+                    selectedGenreId: filters.primaryGenreId,
+                    onGenreSelected: (genreId) {
+                      ref.read(discoverFiltersProvider.notifier).state = genreId == null
+                          ? filters.copyWith(clearPrimaryGenre: true)
+                          : filters.copyWith(primaryGenreId: genreId);
+                    },
+                  ),
                 ),
               ),
               if (!EnvConfig.hasTmdbApiKey)
@@ -300,10 +315,15 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
                       final watched = watchedIds.contains(movie.id);
                       final inWatchlist = watchlistIds.contains(movie.id);
 
+                      final genreLabel = movie.genreIds.isNotEmpty
+                          ? TmdbGenres.labelFor(movie.genreIds.first)
+                          : null;
+
                       return MovieCardWidget(
                         title: movie.title,
                         posterPath: movie.posterPath,
                         year: year,
+                        genreLabel: genreLabel,
                         voteAverage: movie.voteAverage,
                         streamingProviderLabel: streamLabel,
                         isWatched: watched,

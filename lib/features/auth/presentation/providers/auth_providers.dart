@@ -20,7 +20,7 @@ final registerUseCaseProvider = Provider<RegisterUseCase>(
 );
 
 final signOutUseCaseProvider = Provider<SignOutUseCase>(
-  (ref) => SignOutUseCase(ref.watch(authRepositoryProvider)),
+  (ref) => SignOutUseCase(ref.watch(authRepositoryProvider), sl()),
 );
 
 /// Session management — stream único de sessão Firebase + perfil Firestore.
@@ -33,5 +33,6 @@ final authFormNotifierProvider =
   return AuthFormNotifier(
     loginUseCase: ref.watch(loginWithEmailUseCaseProvider),
     registerUseCase: ref.watch(registerUseCaseProvider),
+    rememberMeStorage: sl(),
   );
 });

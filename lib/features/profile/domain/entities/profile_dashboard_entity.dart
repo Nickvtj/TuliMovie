@@ -28,6 +28,7 @@ class ProfileDashboardEntity extends Equatable {
     required this.top4,
     required this.badges,
     required this.recentReviews,
+    required this.totalReviews,
   });
 
   final String displayName;
@@ -36,6 +37,7 @@ class ProfileDashboardEntity extends Equatable {
   final List<TopMovieSlotEntity> top4;
   final List<BadgeEntity> badges;
   final List<ReviewEntity> recentReviews;
+  final int totalReviews;
 
   @override
   List<Object?> get props => [
@@ -45,5 +47,6 @@ class ProfileDashboardEntity extends Equatable {
         top4,
         badges,
         recentReviews,
+        totalReviews,
       ];
 }

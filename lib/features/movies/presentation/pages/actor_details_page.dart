@@ -34,14 +34,18 @@ class ActorDetailsPage extends ConsumerWidget {
       ),
       data: (person) {
         return Scaffold(
-          appBar: AppBar(title: Text(person.name)),
-          body: ListView(
-            padding: const EdgeInsets.only(bottom: 24),
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: _PersonHeader(person: person),
-              ),
+          body: SafeArea(
+            child: ListView(
+              padding: const EdgeInsets.only(bottom: 24),
+              children: [
+                TuliScreenHeader(
+                  mode: TuliScreenHeaderMode.stacked,
+                  title: person.name,
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: _PersonHeader(person: person),
+                ),
               filmographyAsync.when(
                 loading: () => const Padding(
                   padding: EdgeInsets.all(16),
@@ -134,6 +138,7 @@ class ActorDetailsPage extends ConsumerWidget {
                 ),
               ),
             ],
+            ),
           ),
         );
       },

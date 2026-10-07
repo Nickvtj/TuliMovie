@@ -15,7 +15,10 @@ class GetDiscoverCarouselsUseCase {
   final MovieRepository _movies;
   final ReviewRepository _reviews;
 
-  Future<List<DiscoverSectionEntity>> call(DiscoverFilterEntity filters) async {
+  Future<List<DiscoverSectionEntity>> call(
+    DiscoverFilterEntity filters, {
+    required String groupId,
+  }) async {
     if (!filters.usesMixedFeed) {
       final page = await _movies.discoverMoviesQuery(filters.toDiscoverQuery(page: 1));
       if (page.movies.isEmpty) return const [];
@@ -30,7 +33,7 @@ class GetDiscoverCarouselsUseCase {
       ];
     }
 
-    final groupSection = await _groupWatchingSection();
+    final groupSection = await _groupWatchingSection(groupId);
 
     final queries = <({String id, String title, String subtitle, DiscoverQueryEntity query})>[
       (
@@ -94,8 +97,8 @@ class GetDiscoverCarouselsUseCase {
     return sections;
   }
 
-  Future<DiscoverSectionEntity?> _groupWatchingSection() async {
-    final feed = await _reviews.fetchFeedPage(limit: 30);
+  Future<DiscoverSectionEntity?> _groupWatchingSection(String groupId) async {
+    final feed = await _reviews.fetchFeedPage(groupId: groupId, limit: 30);
     final movieIds = feed.reviews.map((r) => r.tmdbMovieId).toSet().take(10).toList();
     if (movieIds.isEmpty) return null;
 

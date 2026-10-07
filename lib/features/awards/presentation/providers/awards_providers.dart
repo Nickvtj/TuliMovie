@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/di/injection.dart';
-import '../../../auth/presentation/providers/auth_providers.dart';
+import '../../../groups/presentation/providers/group_providers.dart';
 import '../../domain/entities/tuli_awards_entity.dart';
 import '../../domain/repositories/awards_repository.dart';
 import '../../domain/usecases/get_tuli_awards_use_case.dart';
@@ -20,7 +20,11 @@ final voteComicCategoryUseCaseProvider = Provider(
 );
 
 final tuliAwardsProvider = FutureProvider.family<TuliAwardsEntity, int>((ref, year) {
-  return ref.watch(getTuliAwardsUseCaseProvider).call(year: year);
+  final groupId = ref.watch(activeGroupIdProvider);
+  if (groupId == null) {
+    throw StateError('Turma ativa não definida.');
+  }
+  return ref.watch(getTuliAwardsUseCaseProvider).call(year: year, groupId: groupId);
 });
 
 final comicVotesProvider = FutureProvider.family<Map<String, String>, int>((ref, year) {

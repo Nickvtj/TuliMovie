@@ -16,6 +16,7 @@ class ReviewEntity extends Equatable {
     required this.createdAt,
     this.reactions = const {},
     this.containsSpoiler = false,
+    this.groupIds = const [],
   });
 
   final String id;
@@ -31,6 +32,7 @@ class ReviewEntity extends Equatable {
   /// emojiKey -> userIds
   final Map<String, List<String>> reactions;
   final bool containsSpoiler;
+  final List<String> groupIds;
 
   bool get hasDiscordBadge => DiscordBadgeCalculator.shouldShow(participants);
 
@@ -59,5 +61,6 @@ class ReviewEntity extends Equatable {
         createdAt,
         reactions,
         containsSpoiler,
+        groupIds,
       ];
 }

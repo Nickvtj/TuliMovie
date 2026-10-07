@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/theme/app_colors.dart';
+import '../../../../core/presentation/widgets/tuli_bottom_sheet.dart';
+import '../../../../core/presentation/widgets/tuli_filter_chip.dart';
+import '../../../../core/presentation/widgets/tuli_score_pill.dart';
+import '../../../../core/theme/app_theme.dart';
 import '../../../movies/domain/constants/tmdb_streaming_providers.dart';
 import '../../domain/entities/discover_filter_entity.dart';
 
@@ -16,7 +19,7 @@ class DiscoverFilterBottomSheet extends StatefulWidget {
     return showModalBottomSheet<DiscoverFilterEntity>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.surface,
+      backgroundColor: Colors.transparent,
       builder: (_) => DiscoverFilterBottomSheet(initial: initial),
     );
   }
@@ -33,93 +36,82 @@ class _DiscoverFilterBottomSheetState extends State<DiscoverFilterBottomSheet> {
     (widget.initial.releaseYearTo ?? DiscoverFilterDefaults.currentYear).toDouble(),
   );
 
+  void _apply() {
+    Navigator.pop(
+      context,
+      widget.initial.copyWith(
+        withWatchProviderIds: _providers.toList(),
+        releaseYearFrom: _decadeRange.start.round(),
+        releaseYearTo: _decadeRange.end.round(),
+        minVoteAverage: _minVote <= 0 ? null : _minVote,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(
-        left: 16,
-        right: 16,
-        top: 16,
-        bottom: MediaQuery.paddingOf(context).bottom + 16,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text('Filtros avançados', style: Theme.of(context).textTheme.titleLarge),
-          const SizedBox(height: 12),
-          Text('Streaming', style: Theme.of(context).textTheme.titleSmall),
-          Wrap(
-            spacing: 8,
-            children: [
-              for (final provider in TmdbStreamingProviders.all)
-                FilterChip(
-                  label: Text(provider.name),
-                  selected: _providers.contains(provider.id),
-                  onSelected: (selected) {
-                    setState(() {
-                      if (selected) {
-                        _providers.add(provider.id);
-                      } else {
-                        _providers.remove(provider.id);
-                      }
-                    });
-                  },
-                ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text('Década de lançamento', style: Theme.of(context).textTheme.titleSmall),
-          RangeSlider(
-            min: 1970,
-            max: DiscoverFilterDefaults.currentYear.toDouble(),
-            divisions: 5,
-            activeColor: AppColors.gold,
-            values: _decadeRange,
-            labels: RangeLabels(
-              _decadeRange.start.round().toString(),
-              _decadeRange.end.round().toString(),
+    return TuliBottomSheet(
+      title: 'Filtros avançados',
+      onCancel: () => Navigator.pop(context),
+      onApply: _apply,
+      child: SliderTheme(
+        data: tuliSliderTheme(context),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text('Streaming', style: Theme.of(context).textTheme.titleSmall),
+            const SizedBox(height: AppSpacing.sm),
+            Wrap(
+              spacing: AppSpacing.sm,
+              runSpacing: AppSpacing.sm,
+              children: [
+                for (final provider in TmdbStreamingProviders.all)
+                  TuliFilterChip(
+                    label: provider.name,
+                    selected: _providers.contains(provider.id),
+                    onSelected: () {
+                      setState(() {
+                        if (_providers.contains(provider.id)) {
+                          _providers.remove(provider.id);
+                        } else {
+                          _providers.add(provider.id);
+                        }
+                      });
+                    },
+                  ),
+              ],
             ),
-            onChanged: (values) => setState(() => _decadeRange = values),
-          ),
-          Text('Nota mínima TMDB: ${_minVote.toStringAsFixed(1)}'),
-          Slider(
-            min: 0,
-            max: 9,
-            divisions: 18,
-            activeColor: AppColors.gold,
-            value: _minVote,
-            onChanged: (v) => setState(() => _minVote = v),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Cancelar'),
-                ),
+            const SizedBox(height: AppSpacing.lg),
+            Text('Década de lançamento', style: Theme.of(context).textTheme.titleSmall),
+            RangeSlider(
+              min: 1970,
+              max: DiscoverFilterDefaults.currentYear.toDouble(),
+              divisions: 5,
+              values: _decadeRange,
+              labels: RangeLabels(
+                _decadeRange.start.round().toString(),
+                _decadeRange.end.round().toString(),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: FilledButton(
-                  onPressed: () {
-                    Navigator.pop(
-                      context,
-                      widget.initial.copyWith(
-                        withWatchProviderIds: _providers.toList(),
-                        releaseYearFrom: _decadeRange.start.round(),
-                        releaseYearTo: _decadeRange.end.round(),
-                        minVoteAverage: _minVote <= 0 ? null : _minVote,
-                      ),
-                    );
-                  },
-                  child: const Text('Aplicar'),
-                ),
-              ),
-            ],
-          ),
-        ],
+              onChanged: (values) => setState(() => _decadeRange = values),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Row(
+              children: [
+                Text('Nota mínima TMDB', style: Theme.of(context).textTheme.titleSmall),
+                const Spacer(),
+                TuliScorePill(score: _minVote, compact: true),
+              ],
+            ),
+            Slider(
+              min: 0,
+              max: 9,
+              divisions: 18,
+              value: _minVote,
+              onChanged: (v) => setState(() => _minVote = v),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+          ],
+        ),
       ),
     );
   }

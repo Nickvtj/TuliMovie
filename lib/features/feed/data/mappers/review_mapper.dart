@@ -16,6 +16,7 @@ abstract final class ReviewMapper {
       createdAt: model.createdAt,
       reactions: model.reactions,
       containsSpoiler: model.containsSpoiler,
+      groupIds: model.resolvedGroupIds,
     );
   }
 

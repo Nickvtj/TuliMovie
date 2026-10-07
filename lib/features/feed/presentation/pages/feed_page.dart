@@ -3,10 +3,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/presentation/widgets/widgets.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_theme.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
+import '../../../groups/domain/entities/group_entity.dart';
+import '../../../groups/presentation/pages/group_hub_page.dart';
+import '../../../groups/presentation/providers/group_providers.dart';
 import '../../../movies/presentation/pages/movie_details_page.dart';
 import '../../../share/presentation/providers/share_providers.dart';
 import '../providers/feed_providers.dart';
+import '../providers/feed_read_providers.dart';
 import '../widgets/review_card_widget.dart';
 
 class FeedPage extends ConsumerStatefulWidget {
@@ -18,7 +23,6 @@ class FeedPage extends ConsumerStatefulWidget {
 
 class _FeedPageState extends ConsumerState<FeedPage> {
   final _scrollController = ScrollController();
-
   @override
   void initState() {
     super.initState();
@@ -44,26 +48,54 @@ class _FeedPageState extends ConsumerState<FeedPage> {
   @override
   Widget build(BuildContext context) {
     final feed = ref.watch(feedNotifierProvider);
-    final user = ref.watch(authSessionProvider).valueOrNull;
+    final groupsAsync = ref.watch(userGroupsProvider);
+    final selectedTab = ref.watch(feedTabGroupIdProvider);
+    final groupNames = ref.watch(groupNameMapProvider);
 
     return Scaffold(
       body: RefreshIndicator(
         color: AppColors.gold,
-        onRefresh: () => ref.read(feedNotifierProvider.notifier).refresh(),
+        onRefresh: () async {
+          await ref.read(feedNotifierProvider.notifier).refresh();
+          markFeedAsSeen(ref);
+        },
         child: CustomScrollView(
           controller: _scrollController,
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
-            SliverAppBar(
-              floating: true,
-              title: Text('Feed da turma', style: Theme.of(context).textTheme.headlineSmall),
-              actions: [
-                IconButton(
-                  tooltip: 'Sair',
-                  onPressed: () => ref.read(signOutUseCaseProvider)(),
-                  icon: const Icon(Icons.logout_rounded),
+            SliverToBoxAdapter(
+              child: SafeArea(
+                bottom: false,
+                child: TuliScreenHeader(
+                  mode: TuliScreenHeaderMode.root,
+                  leadingStatusDot: true,
+                  title: 'Feed das comunidades',
+                  trailingActions: [
+                    TuliIconButtonCircle(
+                      icon: Icons.groups_rounded,
+                      tooltip: 'Turma',
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute<void>(builder: (_) => const GroupHubPage()),
+                        );
+                      },
+                    ),
+                  ],
                 ),
-              ],
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: groupsAsync.when(
+                loading: () => const SizedBox.shrink(),
+                error: (_, __) => const SizedBox.shrink(),
+                data: (groups) => _FeedGroupTabs(
+                  groups: groups,
+                  selectedGroupId: selectedTab,
+                  onSelected: (id) {
+                    ref.read(feedTabGroupIdProvider.notifier).state = id;
+                  },
+                ),
+              ),
             ),
             if (feed.isInitialLoading)
               const SliverToBoxAdapter(
@@ -98,6 +130,7 @@ class _FeedPageState extends ConsumerState<FeedPage> {
                     final review = feed.reviews[index];
                     return ReviewCardWidget(
                       review: review,
+                      groupNameMap: groupNames,
                       onShare: () async {
                         try {
                           await ref.read(shareReviewCardUseCaseProvider).call(review);
@@ -115,15 +148,61 @@ class _FeedPageState extends ConsumerState<FeedPage> {
                           ),
                         );
                       },
-                      onReact: user == null
+                      onReact: ref.watch(authSessionProvider).valueOrNull == null
                           ? null
-                          : (key) => ref.read(feedNotifierProvider.notifier).toggleReaction(
-                                reviewId: review.id,
-                                userId: user.id,
-                                reactionKey: key,
-                              ),
+                          : (key) {
+                              final user = ref.read(authSessionProvider).valueOrNull!;
+                              return ref.read(feedNotifierProvider.notifier).toggleReaction(
+                                    reviewId: review.id,
+                                    userId: user.id,
+                                    reactionKey: key,
+                                  );
+                            },
                     );
                   },
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _FeedGroupTabs extends StatelessWidget {
+  const _FeedGroupTabs({
+    required this.groups,
+    required this.selectedGroupId,
+    required this.onSelected,
+  });
+
+  final List<GroupEntity> groups;
+  final String? selectedGroupId;
+  final ValueChanged<String?> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.section),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(right: AppSpacing.sm),
+              child: TuliFilterChip(
+                label: 'Todas',
+                selected: selectedGroupId == null,
+                onSelected: () => onSelected(null),
+              ),
+            ),
+            for (final group in groups)
+              Padding(
+                padding: const EdgeInsets.only(right: AppSpacing.sm),
+                child: TuliFilterChip(
+                  label: group.name,
+                  selected: selectedGroupId == group.id,
+                  onSelected: () => onSelected(group.id),
                 ),
               ),
           ],

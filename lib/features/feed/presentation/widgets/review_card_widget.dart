@@ -3,14 +3,17 @@ import 'package:flutter/material.dart';
 import '../../../../core/presentation/widgets/widgets.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/utils/relative_time_pt.dart';
+import '../../../groups/presentation/widgets/group_badge_chip.dart';
 import '../../domain/constants/quick_reactions.dart';
 import '../../domain/entities/review_entity.dart';
+import '../../domain/entities/review_participant_entity.dart';
 import 'quick_reactions_sheet.dart';
 import 'spoiler_blur_text.dart';
 
 typedef ReviewCardTap = void Function(ReviewEntity review);
 
-/// Card modular do feed — compõe apenas widgets do design system.
+/// Card modular do feed — cabeçalho do autor, bloco do filme e citação.
 class ReviewCardWidget extends StatelessWidget {
   const ReviewCardWidget({
     super.key,
@@ -19,9 +22,11 @@ class ReviewCardWidget extends StatelessWidget {
     this.onReact,
     this.onShare,
     this.compact = false,
+    this.groupNameMap = const {},
   });
 
   final ReviewEntity review;
+  final Map<String, String> groupNameMap;
   final ReviewCardTap? onOpenMovie;
   final Future<void> Function(String reactionKey)? onReact;
   final VoidCallback? onShare;
@@ -30,81 +35,46 @@ class ReviewCardWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
-    final year = review.movieReleaseYear != null ? ' (${review.movieReleaseYear})' : '';
+    final author = review.participants.isNotEmpty ? review.participants.first : null;
+    final authorRating = author?.rating ?? review.groupAverageRating;
+    final timeLabel = formatRelativeTimePt(review.createdAt);
 
     return TuliCard(
       onTap: onOpenMovie == null ? null : () => onOpenMovie!(review),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              TuliPosterImage(
-                posterPath: review.moviePosterPath,
-                width: compact ? 64 : 72,
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            '${review.movieTitle}$year',
-                            style: textTheme.titleMedium,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        if (review.hasDiscordBadge) ...[
-                          const SizedBox(width: 8),
-                          const DiscordBadge(compact: true),
-                        ],
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    TuliRatingStars(
-                      value: review.groupAverageRating,
-                      readOnly: true,
-                      starSize: compact ? 18 : 20,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '${review.groupAverageRating.toStringAsFixed(1)} · Galera',
-                      style: textTheme.bodySmall?.copyWith(color: AppColors.gold),
-                    ),
-                    const SizedBox(height: 10),
-                    UserAvatarGroup(
-                      imageUrls: review.participants.map((p) => p.photoUrl).toList(),
-                      initials: review.participants.map((p) => _initials(p.displayName)).toList(),
-                      size: compact ? 28 : 32,
-                      maxVisible: 5,
-                    ),
-                  ],
-                ),
-              ),
-            ],
+          if (author != null) _AuthorHeader(author: author, timeLabel: timeLabel),
+          if (review.groupIds.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.sm),
+            Wrap(
+              spacing: AppSpacing.sm,
+              runSpacing: AppSpacing.sm,
+              children: [
+                for (final groupId in review.groupIds)
+                  GroupBadgeChip(
+                    groupId: groupId,
+                    label: groupNameMap[groupId] ?? 'Turma',
+                    compact: true,
+                  ),
+              ],
+            ),
+          ],
+          const SizedBox(height: AppSpacing.md),
+          _MovieBlock(
+            review: review,
+            authorRating: authorRating,
+            compact: compact,
+            textTheme: textTheme,
           ),
           if (review.comment != null && review.comment!.trim().isNotEmpty) ...[
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.md),
             if (review.containsSpoiler)
-              SpoilerBlurText(
-                text: review.comment!,
-                maxLines: compact ? 2 : 3,
-              )
+              SpoilerBlurText(text: review.comment!, maxLines: compact ? 3 : 5)
             else
-              Text(
-                review.comment!,
-                maxLines: compact ? 2 : 3,
-                overflow: TextOverflow.ellipsis,
-                style: textTheme.bodyMedium,
-              ),
+              TuliQuoteBlock(text: review.comment!, maxLines: compact ? 3 : 5),
           ],
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.md),
           _ReactionStrip(review: review),
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
@@ -112,7 +82,7 @@ class ReviewCardWidget extends StatelessWidget {
               if (onShare != null)
                 TextButton.icon(
                   onPressed: onShare,
-                  icon: const Icon(Icons.ios_share, size: 18),
+                  icon: const Icon(Icons.style_outlined, size: 18),
                   label: const Text('Card'),
                 ),
               TextButton.icon(
@@ -123,7 +93,7 @@ class ReviewCardWidget extends StatelessWidget {
                         if (key != null) await onReact!(key);
                       },
                 icon: const Icon(Icons.add_reaction_outlined, size: 18),
-                label: const Text('Reagir'),
+                label: const Text('+ Reagir'),
               ),
             ],
           ),
@@ -131,15 +101,110 @@ class ReviewCardWidget extends StatelessWidget {
       ),
     );
   }
+}
 
-  static String _initials(String name) {
-    final parts = name.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
-    if (parts.isEmpty) return '?';
-    if (parts.length == 1) {
-      final token = parts.first;
-      return (token.length >= 2 ? token.substring(0, 2) : token).toUpperCase();
-    }
-    return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
+class _AuthorHeader extends StatelessWidget {
+  const _AuthorHeader({required this.author, required this.timeLabel});
+
+  final ReviewParticipantEntity author;
+  final String timeLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return Row(
+      children: [
+        TuliRingAvatar(
+          displayName: author.displayName,
+          imageUrl: author.photoUrl,
+          size: 40,
+        ),
+        const SizedBox(width: AppSpacing.md),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                author.displayName,
+                style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+              ),
+              Text(
+                'avaliou $timeLabel',
+                style: textTheme.bodySmall?.copyWith(color: AppColors.textMuted),
+              ),
+            ],
+          ),
+        ),
+        const Icon(Icons.more_vert_rounded, color: AppColors.textMuted, size: 20),
+      ],
+    );
+  }
+}
+
+class _MovieBlock extends StatelessWidget {
+  const _MovieBlock({
+    required this.review,
+    required this.authorRating,
+    required this.compact,
+    required this.textTheme,
+  });
+
+  final ReviewEntity review;
+  final double authorRating;
+  final bool compact;
+  final TextTheme textTheme;
+
+  @override
+  Widget build(BuildContext context) {
+    final year = review.movieReleaseYear?.toString();
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        TuliPosterImage(
+          posterPath: review.moviePosterPath,
+          width: compact ? 64 : 76,
+        ),
+        const SizedBox(width: AppSpacing.md),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (review.hasDiscordBadge) const DiscordBadge(compact: true),
+              Text(
+                review.movieTitle,
+                style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              if (year != null) ...[
+                const SizedBox(height: 4),
+                TuliMetaRow(year: year),
+              ],
+              const SizedBox(height: AppSpacing.sm),
+              Row(
+                children: [
+                  TuliRatingStars(
+                    value: authorRating,
+                    readOnly: true,
+                    starSize: compact ? 16 : 18,
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Text(
+                    authorRating.toStringAsFixed(1),
+                    style: textTheme.labelLarge?.copyWith(color: AppColors.gold),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Média da turma: ${review.groupAverageRating.toStringAsFixed(1)} ★',
+                style: textTheme.bodySmall?.copyWith(color: AppColors.textMuted),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
   }
 }
 
@@ -158,7 +223,7 @@ class _ReactionStrip extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
           color: AppColors.surfaceElevated,
-          borderRadius: AppShape.borderRadiusSm,
+          borderRadius: AppShape.borderRadiusPill,
           border: Border.all(color: AppColors.borderSubtle),
         ),
         child: Text(

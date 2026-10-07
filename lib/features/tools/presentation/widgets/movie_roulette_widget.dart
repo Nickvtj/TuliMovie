@@ -11,7 +11,9 @@ import '../../domain/entities/watchlist_item_entity.dart';
 import '../providers/tools_providers.dart';
 
 class MovieRouletteWidget extends ConsumerStatefulWidget {
-  const MovieRouletteWidget({super.key});
+  const MovieRouletteWidget({super.key, this.compact = false});
+
+  final bool compact;
 
   @override
   ConsumerState<MovieRouletteWidget> createState() => _MovieRouletteWidgetState();
@@ -92,32 +94,38 @@ class _MovieRouletteWidgetState extends ConsumerState<MovieRouletteWidget>
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            AnimatedBuilder(
-              animation: _controller,
-              builder: (context, child) {
-                final turns = Curves.easeOutCubic.transform(_controller.value) * 6;
-                return Transform.rotate(
-                  angle: turns * 2 * pi,
-                  child: Container(
-                    height: 72,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: AppGradients.goldShimmer,
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.gold.withValues(alpha: 0.25),
-                          blurRadius: 16,
-                        ),
-                      ],
+            if (!widget.compact) ...[
+              AnimatedBuilder(
+                animation: _controller,
+                builder: (context, child) {
+                  final turns = Curves.easeOutCubic.transform(_controller.value) * 6;
+                  return Transform.rotate(
+                    angle: turns * 2 * pi,
+                    child: Container(
+                      height: 72,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: AppGradients.goldShimmer,
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.gold.withValues(alpha: 0.25),
+                            blurRadius: 16,
+                          ),
+                        ],
+                      ),
+                      child: const Icon(Icons.casino, color: Color(0xFF1A1400), size: 34),
                     ),
-                    child: const Icon(Icons.casino, color: Color(0xFF1A1400), size: 34),
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 12),
+                  );
+                },
+              ),
+              const SizedBox(height: 12),
+            ],
             TuliButton(
-              label: items.isEmpty ? 'Watchlist vazia' : 'Girar roleta (${items.length})',
+              label: items.isEmpty
+                  ? 'Watchlist vazia'
+                  : widget.compact
+                      ? 'Girar roleta'
+                      : 'Girar roleta (${items.length})',
               icon: Icons.shuffle,
               expand: true,
               onPressed: items.isEmpty ? null : () => _spin(items),

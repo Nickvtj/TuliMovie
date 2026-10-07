@@ -15,11 +15,34 @@ class FeedPageSnapshot {
   final bool hasMore;
 }
 
+class MergedFeedPageSnapshot {
+  MergedFeedPageSnapshot({
+    required this.reviews,
+    required this.cursorsByGroup,
+    required this.hasMore,
+  });
+
+  final List<ReviewModel> reviews;
+  final Map<String, DocumentSnapshot<Map<String, dynamic>>> cursorsByGroup;
+  final bool hasMore;
+}
+
 abstract interface class ReviewFirestoreDataSource {
   Future<FeedPageSnapshot> fetchFeedPage({
+    required String groupId,
     required int limit,
     DocumentSnapshot<Map<String, dynamic>>? startAfter,
   });
+
+  Future<MergedFeedPageSnapshot> fetchMergedFeedPage({
+    required List<String> groupIds,
+    required int limit,
+    Map<String, DocumentSnapshot<Map<String, dynamic>>>? cursorsByGroup,
+  });
+
+  Future<void> migrateLegacyReviewsToGroup(String groupId);
+
+  Future<void> backfillGroupIdsArray(String groupId);
 
   Future<List<ReviewModel>> fetchByMovieId(int tmdbMovieId, {int limit = 20});
 
@@ -48,11 +71,14 @@ class ReviewFirestoreDataSourceImpl implements ReviewFirestoreDataSource {
 
   @override
   Future<FeedPageSnapshot> fetchFeedPage({
+    required String groupId,
     required int limit,
     DocumentSnapshot<Map<String, dynamic>>? startAfter,
   }) async {
-    Query<Map<String, dynamic>> query =
-        _collection.orderBy('createdAt', descending: true).limit(limit);
+    Query<Map<String, dynamic>> query = _collection
+        .where('groupIds', arrayContains: groupId)
+        .orderBy('createdAt', descending: true)
+        .limit(limit);
 
     if (startAfter != null) {
       query = query.startAfterDocument(startAfter);
@@ -69,6 +95,50 @@ class ReviewFirestoreDataSourceImpl implements ReviewFirestoreDataSource {
       reviews: reviews,
       lastDocument: lastDoc,
       hasMore: snapshot.docs.length >= limit,
+    );
+  }
+
+  @override
+  Future<MergedFeedPageSnapshot> fetchMergedFeedPage({
+    required List<String> groupIds,
+    required int limit,
+    Map<String, DocumentSnapshot<Map<String, dynamic>>>? cursorsByGroup,
+  }) async {
+    if (groupIds.isEmpty) {
+      return MergedFeedPageSnapshot(reviews: const [], cursorsByGroup: const {}, hasMore: false);
+    }
+
+    final perGroup = <ReviewModel>[];
+    final nextCursors = <String, DocumentSnapshot<Map<String, dynamic>>>{};
+    var anyHasMore = false;
+
+    for (final groupId in groupIds) {
+      final startAfter = cursorsByGroup?[groupId];
+      final page = await fetchFeedPage(
+        groupId: groupId,
+        limit: limit,
+        startAfter: startAfter,
+      );
+      perGroup.addAll(page.reviews);
+      if (page.lastDocument != null) {
+        nextCursors[groupId] = page.lastDocument!;
+      }
+      if (page.hasMore) anyHasMore = true;
+    }
+
+    final byId = <String, ReviewModel>{};
+    for (final review in perGroup) {
+      byId[review.id] = review;
+    }
+
+    final sorted = byId.values.toList()
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    final trimmed = sorted.take(limit).toList();
+
+    return MergedFeedPageSnapshot(
+      reviews: trimmed,
+      cursorsByGroup: nextCursors,
+      hasMore: anyHasMore,
     );
   }
 
@@ -114,6 +184,38 @@ class ReviewFirestoreDataSourceImpl implements ReviewFirestoreDataSource {
     return snapshot.docs
         .map((doc) => ReviewModel.fromJson({...doc.data(), 'id': doc.id}))
         .toList();
+  }
+
+  @override
+  Future<void> migrateLegacyReviewsToGroup(String groupId) async {
+    final snapshot = await _collection.where('groupId', isNull: true).limit(100).get();
+    if (snapshot.docs.isEmpty) return;
+
+    final batch = FirebaseFirestoreAccess.require(override: _firestoreOverride).batch();
+    for (final doc in snapshot.docs) {
+      batch.update(doc.reference, {
+        'groupId': groupId,
+        'groupIds': [groupId],
+      });
+    }
+    await batch.commit();
+  }
+
+  @override
+  Future<void> backfillGroupIdsArray(String groupId) async {
+    final snapshot = await _collection.where('groupId', isEqualTo: groupId).limit(100).get();
+    if (snapshot.docs.isEmpty) return;
+
+    final batch = FirebaseFirestoreAccess.require(override: _firestoreOverride).batch();
+    var writes = 0;
+    for (final doc in snapshot.docs) {
+      final data = doc.data();
+      final existing = data['groupIds'];
+      if (existing is List && existing.isNotEmpty) continue;
+      batch.update(doc.reference, {'groupIds': [groupId]});
+      writes++;
+    }
+    if (writes > 0) await batch.commit();
   }
 
   @override

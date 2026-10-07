@@ -27,6 +27,7 @@ class PickMatchCandidatesUseCase {
   static const candidateCount = 15;
 
   Future<List<MatchCandidateEntity>> call({
+    required String groupId,
     required Set<String> participantIds,
     required MatchFiltersEntity filters,
   }) async {
@@ -41,7 +42,7 @@ class PickMatchCandidatesUseCase {
     final random = Random();
 
     if (filters.includeGroupWatchlist) {
-      final items = await _watchlist.watchItems().first;
+      final items = await _watchlist.watchItems(groupId: groupId).first;
       for (final item in items) {
         if (watched.contains(item.tmdbMovieId)) continue;
         picked.add(

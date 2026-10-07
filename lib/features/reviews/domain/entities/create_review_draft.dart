@@ -11,9 +11,11 @@ class CreateReviewDraft extends Equatable {
     this.answers = const {},
     this.comment = '',
     this.containsSpoiler = false,
+    this.selectedGroupIds = const [],
   });
 
   final int tmdbMovieId;
+  final List<String> selectedGroupIds;
   final List<UserEntity> selectedFriends;
   final Map<RatingDimension, double> answers;
   final String comment;
@@ -21,6 +23,7 @@ class CreateReviewDraft extends Equatable {
 
   CreateReviewDraft copyWith({
     List<UserEntity>? selectedFriends,
+    List<String>? selectedGroupIds,
     Map<RatingDimension, double>? answers,
     String? comment,
     bool? containsSpoiler,
@@ -28,6 +31,7 @@ class CreateReviewDraft extends Equatable {
     return CreateReviewDraft(
       tmdbMovieId: tmdbMovieId,
       selectedFriends: selectedFriends ?? this.selectedFriends,
+      selectedGroupIds: selectedGroupIds ?? this.selectedGroupIds,
       answers: answers ?? this.answers,
       comment: comment ?? this.comment,
       containsSpoiler: containsSpoiler ?? this.containsSpoiler,
@@ -46,5 +50,6 @@ class CreateReviewDraft extends Equatable {
         answers,
         comment,
         containsSpoiler,
+        selectedGroupIds,
       ];
 }

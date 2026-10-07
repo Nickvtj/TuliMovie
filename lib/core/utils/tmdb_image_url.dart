@@ -9,4 +9,6 @@ abstract final class TmdbImageUrl {
   }
 
   static String? profile(String? path) => poster(path, size: 'w185');
+
+  static String? backdrop(String? path, {String size = 'w780'}) => poster(path, size: size);
 }

@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/errors/app_exception.dart';
+import '../../data/local/auth_remember_me_storage.dart';
 import '../../domain/usecases/login_with_email_use_case.dart';
 import '../../domain/usecases/register_use_case.dart';
 import '../state/auth_form_state.dart';
@@ -10,12 +11,26 @@ class AuthFormNotifier extends StateNotifier<AuthFormState> {
   AuthFormNotifier({
     required LoginWithEmailUseCase loginUseCase,
     required RegisterUseCase registerUseCase,
+    required AuthRememberMeStorage rememberMeStorage,
   })  : _loginUseCase = loginUseCase,
         _registerUseCase = registerUseCase,
-        super(const AuthFormState());
+        _rememberMeStorage = rememberMeStorage,
+        super(const AuthFormState()) {
+    _loadRememberMeDefault();
+  }
 
   final LoginWithEmailUseCase _loginUseCase;
   final RegisterUseCase _registerUseCase;
+  final AuthRememberMeStorage _rememberMeStorage;
+
+  Future<void> _loadRememberMeDefault() async {
+    final value = await _rememberMeStorage.loadRememberMeDefault();
+    state = state.copyWith(rememberMe: value);
+  }
+
+  void onRememberMeChanged(bool value) {
+    state = state.copyWith(rememberMe: value);
+  }
 
   void openLogin() {
     state = state.copyWith(
@@ -106,11 +121,13 @@ class AuthFormNotifier extends StateNotifier<AuthFormState> {
           confirmPassword: state.confirmPassword,
           displayName: state.displayName,
         );
+        await _rememberMeStorage.persistSessionAfterAuth(rememberMe: true);
       } else {
         await _loginUseCase(
           email: state.email,
           password: state.password,
         );
+        await _rememberMeStorage.persistSessionAfterAuth(rememberMe: state.rememberMe);
       }
       state = state.copyWith(isSubmitting: false);
       return true;

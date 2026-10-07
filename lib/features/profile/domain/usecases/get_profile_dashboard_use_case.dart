@@ -1,5 +1,4 @@
 import '../../../auth/domain/entities/user_entity.dart';
-import '../../../feed/domain/entities/review_entity.dart';
 import '../entities/profile_dashboard_entity.dart';
 import '../repositories/profile_repository.dart';
 import '../repositories/watched_movies_repository.dart';
@@ -42,6 +41,7 @@ class GetProfileDashboardUseCase {
       top4: Top4Calculator.fromReviews(userId: user.id, reviews: reviews),
       badges: BadgeCalculator.compute(userId: user.id, reviews: reviews),
       recentReviews: reviews.take(12).toList(),
+      totalReviews: reviews.length,
     );
   }
 

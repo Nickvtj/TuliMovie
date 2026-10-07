@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_card_swiper/flutter_card_swiper.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/presentation/widgets/widgets.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../domain/entities/match_room_entity.dart';
@@ -82,15 +83,26 @@ class _SwipeMatchPageState extends ConsumerState<SwipeMatchPage> {
             orElse: () => room.candidates.first,
           );
           return Scaffold(
-            appBar: AppBar(title: const Text('Match!')),
-            body: Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Text(
-                  'A turma quer ver:\n${movie.title}',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.headlineSmall,
-                ),
+            body: SafeArea(
+              child: Column(
+                children: [
+                  const TuliScreenHeader(
+                    mode: TuliScreenHeaderMode.stacked,
+                    title: 'Match!',
+                  ),
+                  Expanded(
+                    child: Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Text(
+                          'A turma quer ver:\n${movie.title}',
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.headlineSmall,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           );
@@ -102,58 +114,65 @@ class _SwipeMatchPageState extends ConsumerState<SwipeMatchPage> {
         }
 
         return Scaffold(
-          appBar: AppBar(
-            title: Text('Swipe · ${room.shortCode}'),
-            actions: [
-              Padding(
-                padding: const EdgeInsets.only(right: 12),
-                child: Center(
-                  child: Text(
-                    '${room.participantIds.length} na sala',
-                    style: Theme.of(context).textTheme.labelMedium,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          body: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+          body: SafeArea(
             child: Column(
               children: [
-                MatchActiveFiltersBar(filters: room.filters),
-                const SizedBox(height: 8),
-                Expanded(
-                  child: CardSwiper(
-                    controller: _swiperController,
-                    cardsCount: candidates.length,
-                    numberOfCardsDisplayed: candidates.length >= 2 ? 2 : 1,
-                    padding: const EdgeInsets.only(top: 8, bottom: 8),
-                    backCardOffset: const Offset(0, 18),
-                    scale: 0.94,
-                    cardBuilder: (context, index, horizontal, vertical) {
-                      return MatchSwipeCard(candidate: candidates[index]);
-                    },
-                    onSwipe: (previousIndex, currentIndex, direction) {
-                      if (previousIndex == null || user == null) return true;
-                      final candidate = candidates[previousIndex];
-                      final liked = direction == CardSwiperDirection.right;
-
-                      ref.read(matchRoomRepositoryProvider).submitSwipe(
-                            roomId: widget.roomId,
-                            userId: user.id,
-                            tmdbMovieId: candidate.tmdbMovieId,
-                            liked: liked,
-                          );
-                      return true;
-                    },
-                  ),
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _SwipeHint(color: AppColors.neonRed, label: 'Nope ←', icon: Icons.close),
-                    _SwipeHint(color: AppColors.gold, label: 'Match →', icon: Icons.favorite),
+                TuliScreenHeader(
+                  mode: TuliScreenHeaderMode.stacked,
+                  title: 'Swipe · ${room.shortCode}',
+                  trailingActions: [
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(
+                        '${room.participantIds.length} na sala',
+                        style: Theme.of(context).textTheme.labelMedium,
+                      ),
+                    ),
                   ],
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                    child: Column(
+                      children: [
+                        MatchActiveFiltersBar(filters: room.filters),
+                        const SizedBox(height: 8),
+                        Expanded(
+                          child: CardSwiper(
+                            controller: _swiperController,
+                            cardsCount: candidates.length,
+                            numberOfCardsDisplayed: candidates.length >= 2 ? 2 : 1,
+                            padding: const EdgeInsets.only(top: 8, bottom: 8),
+                            backCardOffset: const Offset(0, 18),
+                            scale: 0.94,
+                            cardBuilder: (context, index, horizontal, vertical) {
+                              return MatchSwipeCard(candidate: candidates[index]);
+                            },
+                            onSwipe: (previousIndex, currentIndex, direction) {
+                              if (previousIndex == null || user == null) return true;
+                              final candidate = candidates[previousIndex];
+                              final liked = direction == CardSwiperDirection.right;
+
+                              ref.read(matchRoomRepositoryProvider).submitSwipe(
+                                    roomId: widget.roomId,
+                                    userId: user.id,
+                                    tmdbMovieId: candidate.tmdbMovieId,
+                                    liked: liked,
+                                  );
+                              return true;
+                            },
+                          ),
+                        ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            _SwipeHint(color: AppColors.neonRed, label: 'Nope ←', icon: Icons.close),
+                            _SwipeHint(color: AppColors.gold, label: 'Match →', icon: Icons.favorite),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ],
             ),

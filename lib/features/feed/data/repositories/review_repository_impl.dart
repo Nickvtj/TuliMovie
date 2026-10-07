@@ -13,6 +13,12 @@ class _FirestoreFeedCursor extends FeedCursor {
   final DocumentSnapshot<Map<String, dynamic>> document;
 }
 
+class _MergedFirestoreFeedCursor extends FeedCursor {
+  _MergedFirestoreFeedCursor(this.cursorsByGroup);
+
+  final Map<String, DocumentSnapshot<Map<String, dynamic>>> cursorsByGroup;
+}
+
 class ReviewRepositoryImpl implements ReviewRepository {
   ReviewRepositoryImpl(this._dataSource);
 
@@ -20,12 +26,14 @@ class ReviewRepositoryImpl implements ReviewRepository {
 
   @override
   Future<FeedPageResult> fetchFeedPage({
+    required String groupId,
     required int limit,
     FeedCursor? cursor,
   }) async {
     try {
       final startAfter = cursor is _FirestoreFeedCursor ? cursor.document : null;
       final page = await _dataSource.fetchFeedPage(
+        groupId: groupId,
         limit: limit,
         startAfter: startAfter,
       );
@@ -35,6 +43,32 @@ class ReviewRepositoryImpl implements ReviewRepository {
         hasMore: page.hasMore,
         nextCursor:
             page.lastDocument == null ? null : _FirestoreFeedCursor(page.lastDocument!),
+      );
+    } catch (e) {
+      throw AppException(message: 'Erro ao carregar feed.', cause: e);
+    }
+  }
+
+  @override
+  Future<FeedPageResult> fetchMergedFeedPage({
+    required List<String> groupIds,
+    required int limit,
+    FeedCursor? cursor,
+  }) async {
+    try {
+      final cursors = cursor is _MergedFirestoreFeedCursor ? cursor.cursorsByGroup : null;
+      final page = await _dataSource.fetchMergedFeedPage(
+        groupIds: groupIds,
+        limit: limit,
+        cursorsByGroup: cursors,
+      );
+
+      return FeedPageResult(
+        reviews: ReviewMapper.toEntityList(page.reviews),
+        hasMore: page.hasMore,
+        nextCursor: page.cursorsByGroup.isEmpty
+            ? null
+            : _MergedFirestoreFeedCursor(page.cursorsByGroup),
       );
     } catch (e) {
       throw AppException(message: 'Erro ao carregar feed.', cause: e);

@@ -1,6 +1,7 @@
 import 'package:get_it/get_it.dart';
 
 import '../../features/auth/data/datasources/firebase_auth_remote_data_source.dart';
+import '../../features/auth/data/local/auth_remember_me_storage.dart';
 import '../../features/auth/data/datasources/user_firestore_data_source.dart';
 import '../../features/auth/data/repositories/auth_repository_impl.dart';
 import '../../features/auth/domain/repositories/auth_repository.dart';
@@ -13,6 +14,11 @@ import '../../features/feed/domain/repositories/review_repository.dart';
 import '../../features/feed/domain/usecases/get_feed_page_use_case.dart';
 import '../../features/feed/domain/usecases/get_movie_group_reviews_use_case.dart';
 import '../../features/feed/domain/usecases/toggle_review_reaction_use_case.dart';
+import '../../features/groups/data/datasources/group_firestore_data_source.dart';
+import '../../features/groups/data/local/active_group_storage.dart';
+import '../../features/groups/data/repositories/group_repository_impl.dart';
+import '../../features/groups/domain/repositories/group_repository.dart';
+import '../../features/groups/domain/usecases/ensure_active_group_use_case.dart';
 import '../../features/reviews/data/repositories/group_members_repository_impl.dart';
 import '../../features/reviews/data/repositories/review_write_repository_impl.dart';
 import '../../features/reviews/domain/repositories/group_members_repository.dart';
@@ -80,9 +86,12 @@ Future<void> configureDependencies() async {
         userFirestore: sl<UserFirestoreDataSource>(),
       ),
     )
+    ..registerLazySingleton<AuthRememberMeStorage>(AuthRememberMeStorage.new)
     ..registerLazySingleton(() => LoginWithEmailUseCase(sl<AuthRepository>()))
     ..registerLazySingleton(() => RegisterUseCase(sl<AuthRepository>()))
-    ..registerLazySingleton(() => SignOutUseCase(sl<AuthRepository>()))
+    ..registerLazySingleton(
+      () => SignOutUseCase(sl<AuthRepository>(), sl<AuthRememberMeStorage>()),
+    )
     ..registerLazySingleton<ReviewFirestoreDataSource>(
       ReviewFirestoreDataSourceImpl.new,
     )
@@ -92,8 +101,24 @@ Future<void> configureDependencies() async {
     ..registerLazySingleton(() => GetFeedPageUseCase(sl<ReviewRepository>()))
     ..registerLazySingleton(() => GetMovieGroupReviewsUseCase(sl<ReviewRepository>()))
     ..registerLazySingleton(() => ToggleReviewReactionUseCase(sl<ReviewRepository>()))
+    ..registerLazySingleton<GroupFirestoreDataSource>(GroupFirestoreDataSource.new)
+    ..registerLazySingleton<GroupRepository>(
+      () => GroupRepositoryImpl(sl<GroupFirestoreDataSource>()),
+    )
+    ..registerLazySingleton<ActiveGroupStorage>(ActiveGroupStorage.new)
+    ..registerLazySingleton(
+      () => EnsureActiveGroupUseCase(
+        groups: sl<GroupRepository>(),
+        storage: sl<ActiveGroupStorage>(),
+        reviews: sl<ReviewFirestoreDataSource>(),
+        watchlist: sl<WatchlistFirestoreDataSource>(),
+      ),
+    )
     ..registerLazySingleton<GroupMembersRepository>(
-      () => GroupMembersRepositoryImpl(sl<UserFirestoreDataSource>()),
+      () => GroupMembersRepositoryImpl(
+        sl<GroupFirestoreDataSource>(),
+        sl<UserFirestoreDataSource>(),
+      ),
     )
     ..registerLazySingleton<ReviewWriteRepository>(
       () => ReviewWriteRepositoryImpl(sl<ReviewFirestoreDataSource>()),

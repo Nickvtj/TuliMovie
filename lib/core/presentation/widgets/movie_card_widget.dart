@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../../theme/app_colors.dart';
 import '../../theme/app_theme.dart';
+import 'tuli_meta_row.dart';
 import 'tuli_poster_image.dart';
+import 'tuli_score_pill.dart';
 
 class MovieCardWidget extends StatelessWidget {
   const MovieCardWidget({
@@ -10,6 +12,7 @@ class MovieCardWidget extends StatelessWidget {
     required this.title,
     this.posterPath,
     this.year,
+    this.genreLabel,
     this.voteAverage,
     this.streamingProviderLabel,
     this.onTap,
@@ -25,6 +28,7 @@ class MovieCardWidget extends StatelessWidget {
   final String title;
   final String? posterPath;
   final String? year;
+  final String? genreLabel;
   final double? voteAverage;
   final String? streamingProviderLabel;
   final VoidCallback? onTap;
@@ -78,7 +82,7 @@ class MovieCardWidget extends StatelessWidget {
                   Positioned(
                     top: 6,
                     right: 6,
-                    child: _MiniBadge(label: voteAverage!.toStringAsFixed(1)),
+                    child: TuliScorePill(score: voteAverage!, compact: true),
                   ),
                 if (!titleBelowPoster)
                   Positioned(
@@ -147,7 +151,8 @@ class MovieCardWidget extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: textTheme.labelLarge,
             ),
-            if (year != null) Text(year!, style: textTheme.bodySmall),
+            if (year != null || (genreLabel != null && genreLabel!.isNotEmpty))
+              TuliMetaRow(year: year, genreLabel: genreLabel),
           ],
         ],
       ),

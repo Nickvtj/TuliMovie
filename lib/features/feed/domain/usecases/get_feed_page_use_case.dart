@@ -6,9 +6,18 @@ class GetFeedPageUseCase {
   final ReviewRepository _repository;
 
   Future<FeedPageResult> call({
+    String? groupId,
+    List<String>? groupIds,
     required int limit,
     FeedCursor? cursor,
   }) {
-    return _repository.fetchFeedPage(limit: limit, cursor: cursor);
+    if (groupId != null) {
+      return _repository.fetchFeedPage(groupId: groupId, limit: limit, cursor: cursor);
+    }
+    return _repository.fetchMergedFeedPage(
+      groupIds: groupIds ?? const [],
+      limit: limit,
+      cursor: cursor,
+    );
   }
 }

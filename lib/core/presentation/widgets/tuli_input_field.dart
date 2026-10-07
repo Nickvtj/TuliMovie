@@ -25,6 +25,7 @@ class TuliInputField extends StatefulWidget {
     this.maxLines = 1,
     this.enabled = true,
     this.inputFormatters,
+    this.labelAllCaps = false,
   });
 
   final TextEditingController? controller;
@@ -44,6 +45,7 @@ class TuliInputField extends StatefulWidget {
   final int maxLines;
   final bool enabled;
   final List<TextInputFormatter>? inputFormatters;
+  final bool labelAllCaps;
 
   @override
   State<TuliInputField> createState() => _TuliInputFieldState();
@@ -81,14 +83,19 @@ class _TuliInputFieldState extends State<TuliInputField> {
         if (widget.label != null) ...[
           AnimatedDefaultTextStyle(
             duration: AppDurations.fast,
-            style: theme.textTheme.labelMedium!.copyWith(
+            style: (widget.labelAllCaps
+                    ? theme.textTheme.labelSmall!
+                    : theme.textTheme.labelMedium!)
+                .copyWith(
               color: hasError
                   ? AppColors.neonRed
                   : focused
                       ? AppColors.gold
                       : AppColors.textSecondary,
+              letterSpacing: widget.labelAllCaps ? 1.1 : null,
+              fontWeight: widget.labelAllCaps ? FontWeight.w600 : null,
             ),
-            child: Text(widget.label!),
+            child: Text(widget.labelAllCaps ? widget.label!.toUpperCase() : widget.label!),
           ),
           const SizedBox(height: 8),
         ],

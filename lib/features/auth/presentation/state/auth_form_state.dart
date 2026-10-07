@@ -23,6 +23,7 @@ class AuthFormState extends Equatable {
     this.formError,
     this.obscurePassword = true,
     this.obscureConfirmPassword = true,
+    this.rememberMe = true,
   });
 
   final AuthFormStep step;
@@ -39,6 +40,7 @@ class AuthFormState extends Equatable {
   final String? formError;
   final bool obscurePassword;
   final bool obscureConfirmPassword;
+  final bool rememberMe;
 
   bool get isRegister => mode == AuthFormMode.register;
 
@@ -74,6 +76,7 @@ class AuthFormState extends Equatable {
     bool clearFormError = false,
     bool? obscurePassword,
     bool? obscureConfirmPassword,
+    bool? rememberMe,
   }) {
     return AuthFormState(
       step: step ?? this.step,
@@ -97,6 +100,7 @@ class AuthFormState extends Equatable {
       formError: clearFormError ? null : formError ?? this.formError,
       obscurePassword: obscurePassword ?? this.obscurePassword,
       obscureConfirmPassword: obscureConfirmPassword ?? this.obscureConfirmPassword,
+      rememberMe: rememberMe ?? this.rememberMe,
     );
   }
 
@@ -116,5 +120,6 @@ class AuthFormState extends Equatable {
         formError,
         obscurePassword,
         obscureConfirmPassword,
+        rememberMe,
       ];
 }

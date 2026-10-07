@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/presentation/widgets/widgets.dart';
-import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_theme.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
-import '../../../reviews/presentation/providers/create_review_providers.dart';
+import '../../../groups/presentation/providers/group_providers.dart';
 import '../../domain/entities/match_filters_entity.dart';
 import '../../domain/entities/match_room_entity.dart';
 import '../providers/match_providers.dart';
@@ -21,7 +21,6 @@ class MatchLobbyPage extends ConsumerStatefulWidget {
 class _MatchLobbyPageState extends ConsumerState<MatchLobbyPage> {
   final _joinController = TextEditingController();
   MatchFiltersEntity _filters = const MatchFiltersEntity();
-  final _selectedFriendIds = <String>{};
   String? _activeRoomId;
   bool _isCreating = false;
 
@@ -33,19 +32,16 @@ class _MatchLobbyPageState extends ConsumerState<MatchLobbyPage> {
 
   Future<void> _createRoom() async {
     final user = ref.read(authSessionProvider).valueOrNull;
-    if (user == null) return;
+    final groupId = ref.read(activeGroupIdProvider);
+    if (user == null || groupId == null) return;
 
     setState(() => _isCreating = true);
     try {
-      final members =
-          await ref.read(listGroupMembersUseCaseProvider).call(excludeUserId: user.id);
-      final participantIds = members
-          .where((m) => _selectedFriendIds.contains(m.id))
-          .map((m) => m.id)
-          .toList();
+      const participantIds = <String>[];
 
       final candidates = await ref.read(pickMatchCandidatesUseCaseProvider).call(
-            participantIds: {user.id, ...participantIds},
+            groupId: groupId,
+            participantIds: {user.id},
             filters: _filters,
           );
 
@@ -100,24 +96,27 @@ class _MatchLobbyPageState extends ConsumerState<MatchLobbyPage> {
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(authSessionProvider).valueOrNull;
-    final membersAsync = ref.watch(
-      FutureProvider((ref) async {
-        if (user == null) return const [];
-        return ref.read(listGroupMembersUseCaseProvider).call(excludeUserId: user.id);
-      }),
-    );
 
     if (_activeRoomId != null) {
       return _ActiveRoomView(roomId: _activeRoomId!);
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Sala de Match')),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.lg),
+          children: [
+            const TuliScreenHeader(
+              mode: TuliScreenHeaderMode.stacked,
+              title: 'Sala de Match',
+            ),
+          Text(
+            'Crie a sala e compartilhe o código. Você pode jogar sozinho até alguém entrar.',
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+          const SizedBox(height: AppSpacing.lg),
           Text('Filtros da rodada', style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
           OutlinedButton.icon(
             onPressed: () async {
               final updated = await MatchSetupSheet.show(context, initial: _filters);
@@ -126,59 +125,28 @@ class _MatchLobbyPageState extends ConsumerState<MatchLobbyPage> {
             icon: const Icon(Icons.tune),
             label: const Text('Personalizar filtros'),
           ),
-          const SizedBox(height: 16),
-          Text('Quem está no sofá?', style: Theme.of(context).textTheme.titleMedium),
-          membersAsync.when(
-            loading: () => const Padding(
-              padding: EdgeInsets.symmetric(vertical: 12),
-              child: TuliFeedSkeleton(itemCount: 2),
-            ),
-            error: (_, __) => const Text('Erro ao carregar amigos.'),
-            data: (members) {
-              if (members.isEmpty) {
-                return const Text('Sem amigos cadastrados — você pode criar a sala solo.');
-              }
-              return Column(
-                children: members.map((member) {
-                  final selected = _selectedFriendIds.contains(member.id);
-                  return CheckboxListTile(
-                    value: selected,
-                    onChanged: (_) {
-                      setState(() {
-                        if (selected) {
-                          _selectedFriendIds.remove(member.id);
-                        } else {
-                          _selectedFriendIds.add(member.id);
-                        }
-                      });
-                    },
-                    title: Text(member.displayName),
-                  );
-                }).toList(),
-              );
-            },
-          ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
           TuliButton(
             label: 'Criar sala (10 filmes)',
             expand: true,
             isLoading: _isCreating,
             onPressed: user == null || _isCreating ? null : _createRoom,
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: AppSpacing.xxl),
           TuliInputField(
             label: 'Entrar com código',
             hint: 'Ex: A1B2C3',
             controller: _joinController,
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.md),
           TuliButton(
             label: 'Entrar na sala',
             variant: TuliButtonVariant.secondary,
             expand: true,
             onPressed: user == null ? null : _joinRoom,
           ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -205,13 +173,17 @@ class _ActiveRoomView extends ConsumerWidget {
         final isHost = user?.id == room.hostId;
 
         return Scaffold(
-          appBar: AppBar(title: Text('Sala ${room.shortCode}')),
-          body: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                TuliCard(
+          body: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.lg),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  TuliScreenHeader(
+                    mode: TuliScreenHeaderMode.stacked,
+                    title: 'Sala ${room.shortCode}',
+                  ),
+                  TuliCard(
                   variant: TuliCardVariant.goldAccent,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -225,7 +197,7 @@ class _ActiveRoomView extends ConsumerWidget {
                     ],
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: AppSpacing.lg),
                 if (room.status == MatchRoomStatus.matched)
                   TuliButton(
                     label: 'Ver filme match',
@@ -266,7 +238,8 @@ class _ActiveRoomView extends ConsumerWidget {
                           }
                         : null,
                   ),
-              ],
+                ],
+              ),
             ),
           ),
         );

@@ -7,6 +7,7 @@ import '../../../movies/presentation/pages/movie_details_page.dart';
 
 class DiscoverCarouselWidget extends StatelessWidget {
   static const compactCarouselHeight = 228.0;
+  static const carouselPosterWidth = 132.0;
 
   const DiscoverCarouselWidget({
     super.key,
@@ -61,7 +62,9 @@ class DiscoverCarouselWidget extends StatelessWidget {
                   ? movie.releaseDate!.substring(0, 4)
                   : null;
 
-              return MovieCardWidget(
+              return SizedBox(
+                width: carouselPosterWidth,
+                child: MovieCardWidget(
                 title: movie.title,
                 posterPath: movie.posterPath,
                 year: year,
@@ -80,6 +83,7 @@ class DiscoverCarouselWidget extends StatelessWidget {
                 },
                 onMarkWatched: onMarkWatched == null ? null : () => onMarkWatched!(movie),
                 onAddWatchlist: onAddWatchlist == null ? null : () => onAddWatchlist!(movie),
+              ),
               );
             },
           ),

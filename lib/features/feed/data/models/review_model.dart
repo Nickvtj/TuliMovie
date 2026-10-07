@@ -48,6 +48,8 @@ class ReviewModel {
     this.reactions = const {},
     this.containsSpoiler = false,
     this.authorAnswers = const {},
+    this.groupId,
+    this.groupIds = const [],
   });
 
   final String id;
@@ -62,6 +64,14 @@ class ReviewModel {
   final Map<String, List<String>> reactions;
   final bool containsSpoiler;
   final Map<String, double> authorAnswers;
+  final String? groupId;
+  final List<String> groupIds;
+
+  List<String> get resolvedGroupIds {
+    if (groupIds.isNotEmpty) return groupIds;
+    if (groupId != null && groupId!.isNotEmpty) return [groupId!];
+    return const [];
+  }
 
   factory ReviewModel.fromJson(Map<String, dynamic> json) {
     final reactionsRaw = json['reactions'] as Map<String, dynamic>? ?? {};
@@ -90,7 +100,19 @@ class ReviewModel {
       reactions: reactions,
       containsSpoiler: json['containsSpoiler'] as bool? ?? false,
       authorAnswers: _parseAuthorAnswers(json['authorAnswers']),
+      groupId: json['groupId'] as String?,
+      groupIds: _parseGroupIds(json),
     );
+  }
+
+  static List<String> _parseGroupIds(Map<String, dynamic> json) {
+    final raw = json['groupIds'];
+    if (raw is List) {
+      return raw.map((e) => e.toString()).where((id) => id.isNotEmpty).toList();
+    }
+    final legacy = json['groupId'] as String?;
+    if (legacy != null && legacy.isNotEmpty) return [legacy];
+    return const [];
   }
 
   ReviewModel copyWithId(String id) {
@@ -107,6 +129,8 @@ class ReviewModel {
       reactions: reactions,
       containsSpoiler: containsSpoiler,
       authorAnswers: authorAnswers,
+      groupId: groupId,
+      groupIds: groupIds,
     );
   }
 
@@ -123,6 +147,8 @@ class ReviewModel {
       'reactions': reactions,
       'containsSpoiler': containsSpoiler,
       if (authorAnswers.isNotEmpty) 'authorAnswers': authorAnswers,
+      if (resolvedGroupIds.isNotEmpty) 'groupIds': resolvedGroupIds,
+      if (resolvedGroupIds.isNotEmpty) 'groupId': resolvedGroupIds.first,
     };
   }
 

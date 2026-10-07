@@ -6,7 +6,17 @@ class ListGroupMembersUseCase {
 
   final GroupMembersRepository _repository;
 
-  Future<List<UserEntity>> call({required String excludeUserId}) {
-    return _repository.fetchMembers(excludeUserId: excludeUserId);
+  Future<List<UserEntity>> call({
+    required String groupId,
+    required String excludeUserId,
+  }) {
+    return _repository.fetchMembers(groupId: groupId, excludeUserId: excludeUserId);
+  }
+
+  Future<List<UserEntity>> forGroups({
+    required List<String> groupIds,
+    required String excludeUserId,
+  }) {
+    return _repository.fetchMembersForGroups(groupIds: groupIds, excludeUserId: excludeUserId);
   }
 }

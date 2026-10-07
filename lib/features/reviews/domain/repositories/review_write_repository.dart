@@ -13,5 +13,6 @@ abstract interface class ReviewWriteRepository {
     required String comment,
     required bool containsSpoiler,
     required RatingAnswerSet authorAnswers,
+    required List<String> groupIds,
   });
 }

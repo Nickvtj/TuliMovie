@@ -19,6 +19,13 @@ class FeedPageResult {
 
 abstract interface class ReviewRepository {
   Future<FeedPageResult> fetchFeedPage({
+    required String groupId,
+    required int limit,
+    FeedCursor? cursor,
+  });
+
+  Future<FeedPageResult> fetchMergedFeedPage({
+    required List<String> groupIds,
     required int limit,
     FeedCursor? cursor,
   });

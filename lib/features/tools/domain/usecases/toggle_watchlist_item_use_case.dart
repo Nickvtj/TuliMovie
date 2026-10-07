@@ -6,16 +6,18 @@ class ToggleWatchlistItemUseCase {
   final WatchlistFirestoreDataSource _dataSource;
 
   Future<bool> call({
+    required String groupId,
     required int tmdbMovieId,
     required String title,
     String? posterPath,
     required bool isCurrentlyInList,
   }) async {
     if (isCurrentlyInList) {
-      await _dataSource.removeItem(tmdbMovieId: tmdbMovieId);
+      await _dataSource.removeItem(groupId: groupId, tmdbMovieId: tmdbMovieId);
       return false;
     }
     await _dataSource.addItem(
+      groupId: groupId,
       tmdbMovieId: tmdbMovieId,
       title: title,
       posterPath: posterPath,

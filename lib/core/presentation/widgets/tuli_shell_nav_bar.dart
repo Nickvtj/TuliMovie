@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../theme/app_colors.dart';
+import 'tuli_status_dot.dart';
 
 /// Barra inferior com FAB central (+) elevado — padrão app moderno.
 class TuliShellNavBar extends StatelessWidget {
@@ -9,16 +10,17 @@ class TuliShellNavBar extends StatelessWidget {
     required this.selectedIndex,
     required this.onDestinationSelected,
     required this.onPrimaryAction,
+    this.showFeedNotificationBadge = true,
   });
 
   /// Índices: 0 Feed, 1 Descubra, 2 (FAB — não selecionável), 3 Diversão, 4 Perfil.
   final int selectedIndex;
   final ValueChanged<int> onDestinationSelected;
   final VoidCallback onPrimaryAction;
+  final bool showFeedNotificationBadge;
 
   static const primaryFabIndex = 2;
 
-  /// Índice visual na barra (0–3, sem o FAB): Feed, Descubra, Diversão, Perfil.
   int _navSlotToShell(int navSlot) {
     if (navSlot <= 1) return navSlot;
     return navSlot + 1;
@@ -36,7 +38,7 @@ class TuliShellNavBar extends StatelessWidget {
     final bottomPadding = MediaQuery.paddingOf(context).bottom;
 
     return SizedBox(
-      height: 72 + bottomPadding,
+      height: 76 + bottomPadding,
       child: Stack(
         clipBehavior: Clip.none,
         alignment: Alignment.bottomCenter,
@@ -44,41 +46,44 @@ class TuliShellNavBar extends StatelessWidget {
           Padding(
             padding: EdgeInsets.only(bottom: bottomPadding),
             child: Material(
-              color: AppColors.surface.withValues(alpha: 0.96),
+              color: AppColors.surface.withValues(alpha: 0.98),
               elevation: 12,
               shadowColor: Colors.black54,
               child: Container(
-                height: 72,
+                height: 76,
                 decoration: BoxDecoration(
-                  border: Border(top: BorderSide(color: AppColors.borderSubtle.withValues(alpha: 0.6))),
+                  border: Border(
+                    top: BorderSide(color: AppColors.borderSubtle.withValues(alpha: 0.8)),
+                  ),
                 ),
                 child: Row(
                   children: [
                     _NavSlot(
-                      icon: Icons.dynamic_feed_outlined,
-                      selectedIcon: Icons.dynamic_feed,
+                      icon: Icons.theaters_outlined,
+                      selectedIcon: Icons.theaters_rounded,
                       label: 'Feed',
                       selected: navSelected == 0,
+                      showBadge: showFeedNotificationBadge,
                       onTap: () => onDestinationSelected(_navSlotToShell(0)),
                     ),
                     _NavSlot(
-                      icon: Icons.public_outlined,
-                      selectedIcon: Icons.public,
+                      icon: Icons.explore_outlined,
+                      selectedIcon: Icons.explore_rounded,
                       label: 'Descubra',
                       selected: navSelected == 1,
                       onTap: () => onDestinationSelected(_navSlotToShell(1)),
                     ),
                     const Expanded(child: SizedBox(width: 72)),
                     _NavSlot(
-                      icon: Icons.extension_outlined,
-                      selectedIcon: Icons.extension,
-                      label: 'Diversão',
+                      icon: Icons.casino_outlined,
+                      selectedIcon: Icons.casino_rounded,
+                      label: 'Dinâmicas',
                       selected: navSelected == 2,
                       onTap: () => onDestinationSelected(_navSlotToShell(2)),
                     ),
                     _NavSlot(
-                      icon: Icons.person_outline,
-                      selectedIcon: Icons.person,
+                      icon: Icons.account_circle_outlined,
+                      selectedIcon: Icons.account_circle_rounded,
                       label: 'Perfil',
                       selected: navSelected == 3,
                       onTap: () => onDestinationSelected(_navSlotToShell(3)),
@@ -89,7 +94,7 @@ class TuliShellNavBar extends StatelessWidget {
             ),
           ),
           Positioned(
-            bottom: 20 + bottomPadding,
+            bottom: 22 + bottomPadding,
             child: _PrimaryFab(onPressed: onPrimaryAction, selected: selectedIndex == primaryFabIndex),
           ),
         ],
@@ -105,6 +110,7 @@ class _NavSlot extends StatelessWidget {
     required this.label,
     required this.selected,
     required this.onTap,
+    this.showBadge = false,
   });
 
   final IconData icon;
@@ -112,6 +118,7 @@ class _NavSlot extends StatelessWidget {
   final String label;
   final bool selected;
   final VoidCallback onTap;
+  final bool showBadge;
 
   @override
   Widget build(BuildContext context) {
@@ -122,7 +129,18 @@ class _NavSlot extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(selected ? selectedIcon : icon, color: color, size: 24),
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Icon(selected ? selectedIcon : icon, color: color, size: 24),
+                if (showBadge)
+                  const Positioned(
+                    top: -2,
+                    right: -4,
+                    child: TuliStatusDot(size: 7),
+                  ),
+              ],
+            ),
             const SizedBox(height: 4),
             Text(
               label,
@@ -146,27 +164,38 @@ class _PrimaryFab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      elevation: selected ? 10 : 6,
-      shadowColor: AppColors.gold.withValues(alpha: 0.35),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-        side: BorderSide(
-          color: selected ? AppColors.gold.withValues(alpha: 0.7) : AppColors.borderSubtle,
-          width: selected ? 2 : 1,
-        ),
+    return Container(
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.gold.withValues(alpha: selected ? 0.55 : 0.35),
+            blurRadius: 24,
+            spreadRadius: 2,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
-      color: selected ? AppColors.gold : AppColors.surfaceElevated,
-      child: InkWell(
-        onTap: onPressed,
-        borderRadius: BorderRadius.circular(20),
-        child: SizedBox(
-          width: 56,
-          height: 56,
-          child: Icon(
-            Icons.add_rounded,
-            size: 32,
-            color: selected ? AppColors.backgroundDeep : AppColors.gold,
+      child: Material(
+        elevation: 0,
+        shape: CircleBorder(
+          side: BorderSide(
+            color: AppColors.gold,
+            width: selected ? 2.5 : 1.5,
+          ),
+        ),
+        color: selected ? AppColors.gold : AppColors.surfaceElevated,
+        child: InkWell(
+          onTap: onPressed,
+          customBorder: const CircleBorder(),
+          child: SizedBox(
+            width: 58,
+            height: 58,
+            child: Icon(
+              Icons.add_rounded,
+              size: 32,
+              color: selected ? AppColors.backgroundDeep : AppColors.gold,
+            ),
           ),
         ),
       ),

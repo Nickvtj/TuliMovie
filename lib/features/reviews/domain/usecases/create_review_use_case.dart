@@ -13,6 +13,7 @@ class CreateReviewParams {
     required this.answers,
     required this.comment,
     required this.containsSpoiler,
+    required this.groupIds,
   });
 
   final MovieDetailsEntity movie;
@@ -21,6 +22,7 @@ class CreateReviewParams {
   final RatingAnswerSet answers;
   final String comment;
   final bool containsSpoiler;
+  final List<String> groupIds;
 }
 
 class CreateReviewUseCase {
@@ -48,6 +50,7 @@ class CreateReviewUseCase {
       comment: params.comment.trim(),
       containsSpoiler: params.containsSpoiler,
       authorAnswers: params.answers,
+      groupIds: params.groupIds,
     );
   }
 }

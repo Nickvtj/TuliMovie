@@ -7,8 +7,8 @@ class GetTuliAwardsUseCase {
 
   final ReviewRepository _reviews;
 
-  Future<TuliAwardsEntity> call({required int year}) async {
-    final page = await _reviews.fetchFeedPage(limit: 250);
+  Future<TuliAwardsEntity> call({required int year, required String groupId}) async {
+    final page = await _reviews.fetchFeedPage(groupId: groupId, limit: 250);
     return TuliAwardsCalculator.build(year: year, reviews: page.reviews);
   }
 }

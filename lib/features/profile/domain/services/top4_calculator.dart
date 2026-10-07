@@ -1,3 +1,4 @@
+import '../../../../core/utils/iterable_extensions.dart';
 import '../../../feed/domain/entities/review_entity.dart';
 import '../entities/profile_dashboard_entity.dart';
 
@@ -31,13 +32,5 @@ abstract final class Top4Calculator {
     }
 
     return unique.values.toList();
-  }
-}
-
-extension _FirstOrNull<T> on Iterable<T> {
-  T? get firstOrNull {
-    final iterator = this.iterator;
-    if (!iterator.moveNext()) return null;
-    return iterator.current;
   }
 }

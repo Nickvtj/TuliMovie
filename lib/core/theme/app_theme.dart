@@ -5,14 +5,28 @@ import 'app_colors.dart';
 import 'app_typography.dart';
 
 /// Design tokens de forma e motion usados pelo Theme e pelos widgets core.
+abstract final class AppSpacing {
+  static const double xs = 4;
+  static const double sm = 8;
+  static const double md = 12;
+  static const double lg = 16;
+  static const double xl = 20;
+  static const double xxl = 24;
+
+  /// Respiro entre cabeçalho de seção e conteúdo abaixo.
+  static const double section = 20;
+}
+
 abstract final class AppShape {
   static const double radiusMd = 16;
   static const double radiusSm = 12;
   static const double radiusLg = 24;
+  static const double radiusPill = 999;
 
   static BorderRadius get borderRadiusMd => BorderRadius.circular(radiusMd);
   static BorderRadius get borderRadiusSm => BorderRadius.circular(radiusSm);
   static BorderRadius get borderRadiusLg => BorderRadius.circular(radiusLg);
+  static BorderRadius get borderRadiusPill => BorderRadius.circular(radiusPill);
 }
 
 abstract final class AppDurations {
