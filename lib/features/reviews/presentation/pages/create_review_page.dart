@@ -79,18 +79,12 @@ class _CreateReviewFlow extends ConsumerWidget {
             child: AnimatedSwitcher(
               duration: AppDurations.normal,
               child: switch (state.step) {
-                0 => _GroupsStep(
-                    key: const ValueKey('groups'),
-                    state: state,
-                    onToggle: notifier.toggleGroup,
-                    onSelectAll: notifier.selectAllGroups,
-                  ),
-                1 => _FriendsStep(
+                0 => _FriendsStep(
                     key: const ValueKey('friends'),
                     state: state,
                     onToggle: notifier.toggleFriend,
                   ),
-                2 => _RatingsStep(
+                CreateReviewState.ratingsStep => _RatingsStep(
                     key: const ValueKey('ratings'),
                     draft: state.draft,
                     onChanged: notifier.setDimensionRating,
@@ -141,8 +135,9 @@ class _CreateReviewFlow extends ConsumerWidget {
                             }
                             final ok = await notifier.submit();
                             if (!context.mounted || !ok) return;
-                            ref.invalidate(feedNotifierProvider);
+                            ref.read(feedNotifierProvider.notifier).refresh();
                             ref.invalidate(movieGroupReviewsProvider(movieId));
+                            ref.invalidate(userReviewsProvider(author.id));
                             Navigator.of(context).pop(true);
                           },
                   ),
@@ -162,7 +157,7 @@ class _StepHeader extends StatelessWidget {
 
   final int currentStep;
 
-  static const _labels = ['Turmas', 'Galera', '5 Perguntas', 'Comentário'];
+  static const _labels = ['Galera', '5 Perguntas', 'Comentário'];
 
   @override
   Widget build(BuildContext context) {
@@ -206,69 +201,6 @@ class _StepHeader extends StatelessWidget {
   }
 }
 
-class _GroupsStep extends StatelessWidget {
-  const _GroupsStep({
-    super.key,
-    required this.state,
-    required this.onToggle,
-    required this.onSelectAll,
-  });
-
-  final CreateReviewState state;
-  final void Function(String groupId) onToggle;
-  final VoidCallback onSelectAll;
-
-  @override
-  Widget build(BuildContext context) {
-    if (state.userGroups.isEmpty) {
-      return const Center(child: Text('Crie ou entre em uma turma em Minha turma.'));
-    }
-
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        Text(
-          'Onde publicar esta avaliação?',
-          style: Theme.of(context).textTheme.titleMedium,
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'O mesmo post aparece nas turmas selecionadas.',
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textMuted),
-        ),
-        const SizedBox(height: 12),
-        Align(
-          alignment: Alignment.centerLeft,
-          child: TuliButton(
-            label: 'Todas as minhas turmas',
-            variant: TuliButtonVariant.secondary,
-            onPressed: onSelectAll,
-          ),
-        ),
-        const SizedBox(height: 12),
-        ...state.userGroups.map((group) {
-          final selected = state.draft.selectedGroupIds.contains(group.id);
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: TuliCard(
-              variant: selected ? TuliCardVariant.goldAccent : TuliCardVariant.standard,
-              onTap: () => onToggle(group.id),
-              child: CheckboxListTile(
-                value: selected,
-                onChanged: (_) => onToggle(group.id),
-                title: Text(group.name),
-                subtitle: Text('Código ${group.inviteCode}'),
-                controlAffinity: ListTileControlAffinity.leading,
-                activeColor: AppColors.gold,
-              ),
-            ),
-          );
-        }),
-      ],
-    );
-  }
-}
-
 class _FriendsStep extends StatelessWidget {
   const _FriendsStep({
     super.key,
@@ -290,7 +222,7 @@ class _FriendsStep extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Text(
-            'Ninguém mais cadastrado ainda.\nVocê pode publicar só a sua nota.',
+            'Você ainda não segue ninguém.\nPode publicar só a sua nota.',
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodyMedium,
           ),

@@ -4,14 +4,16 @@ import '../../../feed/data/mappers/review_mapper.dart';
 import '../../../feed/data/models/review_model.dart';
 import '../../../feed/domain/entities/review_entity.dart';
 import '../../../movies/domain/entities/movie_details_entity.dart';
+import '../../../social/data/datasources/follow_firestore_data_source.dart';
 import '../../domain/entities/rating_answer_set.dart';
 import '../../domain/entities/rating_dimension.dart';
 import '../../domain/repositories/review_write_repository.dart';
 
 class ReviewWriteRepositoryImpl implements ReviewWriteRepository {
-  ReviewWriteRepositoryImpl(this._reviews);
+  ReviewWriteRepositoryImpl(this._reviews, this._follows);
 
   final ReviewFirestoreDataSource _reviews;
+  final FollowFirestoreDataSource _follows;
 
   @override
   Future<ReviewEntity> createReview({
@@ -23,7 +25,6 @@ class ReviewWriteRepositoryImpl implements ReviewWriteRepository {
     required String comment,
     required bool containsSpoiler,
     required RatingAnswerSet authorAnswers,
-    required List<String> groupIds,
   }) async {
     final releaseYear = _parseYear(movie.movie.releaseDate);
 
@@ -46,7 +47,8 @@ class ReviewWriteRepositoryImpl implements ReviewWriteRepository {
       ),
     ];
 
-    final resolvedGroups = groupIds.where((id) => id.isNotEmpty).toList();
+    // Autor + seguidores atuais; quem seguir depois não recebe este post no feed.
+    final followerIds = await _follows.fetchAllFollowerIds(author.id);
 
     final model = ReviewModel(
       id: '',
@@ -63,8 +65,8 @@ class ReviewWriteRepositoryImpl implements ReviewWriteRepository {
         for (final dimension in RatingDimension.all)
           dimension.name: authorAnswers.answers[dimension]!,
       },
-      groupId: resolvedGroups.isNotEmpty ? resolvedGroups.first : null,
-      groupIds: resolvedGroups,
+      authorId: author.id,
+      audienceIds: {author.id, ...followerIds}.toList(),
     );
 
     final saved = await _reviews.createReview(model);

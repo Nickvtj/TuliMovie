@@ -15,18 +15,6 @@ class FeedPageSnapshot {
   final bool hasMore;
 }
 
-class MergedFeedPageSnapshot {
-  MergedFeedPageSnapshot({
-    required this.reviews,
-    required this.cursorsByGroup,
-    required this.hasMore,
-  });
-
-  final List<ReviewModel> reviews;
-  final Map<String, DocumentSnapshot<Map<String, dynamic>>> cursorsByGroup;
-  final bool hasMore;
-}
-
 abstract interface class ReviewFirestoreDataSource {
   Future<FeedPageSnapshot> fetchFeedPage({
     required String groupId,
@@ -34,11 +22,14 @@ abstract interface class ReviewFirestoreDataSource {
     DocumentSnapshot<Map<String, dynamic>>? startAfter,
   });
 
-  Future<MergedFeedPageSnapshot> fetchMergedFeedPage({
-    required List<String> groupIds,
+  /// Feed social: posts cuja audiência inclui [userId].
+  Future<FeedPageSnapshot> fetchAudienceFeedPage({
+    required String userId,
     required int limit,
-    Map<String, DocumentSnapshot<Map<String, dynamic>>>? cursorsByGroup,
+    DocumentSnapshot<Map<String, dynamic>>? startAfter,
   });
+
+  Future<List<ReviewModel>> fetchByAuthor(String authorId, {int limit = 30});
 
   Future<void> migrateLegacyReviewsToGroup(String groupId);
 
@@ -74,11 +65,43 @@ class ReviewFirestoreDataSourceImpl implements ReviewFirestoreDataSource {
     required String groupId,
     required int limit,
     DocumentSnapshot<Map<String, dynamic>>? startAfter,
+  }) {
+    return _fetchPage(
+      _collection.where('groupIds', arrayContains: groupId),
+      limit: limit,
+      startAfter: startAfter,
+    );
+  }
+
+  @override
+  Future<FeedPageSnapshot> fetchAudienceFeedPage({
+    required String userId,
+    required int limit,
+    DocumentSnapshot<Map<String, dynamic>>? startAfter,
+  }) {
+    return _fetchPage(
+      _collection.where('audienceIds', arrayContains: userId),
+      limit: limit,
+      startAfter: startAfter,
+    );
+  }
+
+  @override
+  Future<List<ReviewModel>> fetchByAuthor(String authorId, {int limit = 30}) async {
+    final page = await _fetchPage(
+      _collection.where('authorId', isEqualTo: authorId),
+      limit: limit,
+    );
+    return page.reviews;
+  }
+
+  Future<FeedPageSnapshot> _fetchPage(
+    Query<Map<String, dynamic>> base, {
+    required int limit,
+    DocumentSnapshot<Map<String, dynamic>>? startAfter,
   }) async {
-    Query<Map<String, dynamic>> query = _collection
-        .where('groupIds', arrayContains: groupId)
-        .orderBy('createdAt', descending: true)
-        .limit(limit);
+    Query<Map<String, dynamic>> query =
+        base.orderBy('createdAt', descending: true).limit(limit);
 
     if (startAfter != null) {
       query = query.startAfterDocument(startAfter);
@@ -95,50 +118,6 @@ class ReviewFirestoreDataSourceImpl implements ReviewFirestoreDataSource {
       reviews: reviews,
       lastDocument: lastDoc,
       hasMore: snapshot.docs.length >= limit,
-    );
-  }
-
-  @override
-  Future<MergedFeedPageSnapshot> fetchMergedFeedPage({
-    required List<String> groupIds,
-    required int limit,
-    Map<String, DocumentSnapshot<Map<String, dynamic>>>? cursorsByGroup,
-  }) async {
-    if (groupIds.isEmpty) {
-      return MergedFeedPageSnapshot(reviews: const [], cursorsByGroup: const {}, hasMore: false);
-    }
-
-    final perGroup = <ReviewModel>[];
-    final nextCursors = <String, DocumentSnapshot<Map<String, dynamic>>>{};
-    var anyHasMore = false;
-
-    for (final groupId in groupIds) {
-      final startAfter = cursorsByGroup?[groupId];
-      final page = await fetchFeedPage(
-        groupId: groupId,
-        limit: limit,
-        startAfter: startAfter,
-      );
-      perGroup.addAll(page.reviews);
-      if (page.lastDocument != null) {
-        nextCursors[groupId] = page.lastDocument!;
-      }
-      if (page.hasMore) anyHasMore = true;
-    }
-
-    final byId = <String, ReviewModel>{};
-    for (final review in perGroup) {
-      byId[review.id] = review;
-    }
-
-    final sorted = byId.values.toList()
-      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-    final trimmed = sorted.take(limit).toList();
-
-    return MergedFeedPageSnapshot(
-      reviews: trimmed,
-      cursorsByGroup: nextCursors,
-      hasMore: anyHasMore,
     );
   }
 

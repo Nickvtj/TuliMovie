@@ -50,6 +50,18 @@ class FollowFirestoreDataSource {
 
   Future<List<String>> fetchFollowingIds(String userId) => _recentIds(_following(userId));
 
+  /// Todos os seguidores, sem teto — usado para montar a audiência de um post.
+  Future<List<String>> fetchAllFollowerIds(String userId) async {
+    final snapshot = await _followers(userId).get();
+    return snapshot.docs.map((doc) => doc.id).toList();
+  }
+
+  Stream<Set<String>> watchFollowingIds(String userId) {
+    return _following(userId)
+        .snapshots()
+        .map((snapshot) => snapshot.docs.map((doc) => doc.id).toSet());
+  }
+
   Future<int> _count(CollectionReference<Map<String, dynamic>> ref) async {
     final snapshot = await ref.count().get();
     return snapshot.count ?? 0;

@@ -40,6 +40,9 @@ class SocialRepositoryImpl implements SocialRepository {
   }
 
   @override
+  Stream<Set<String>> watchFollowingIds(String userId) => _follows.watchFollowingIds(userId);
+
+  @override
   Future<int> countFollowers(String userId) => _guard(() => _follows.countFollowers(userId));
 
   @override

@@ -34,10 +34,18 @@ service cloud.firestore {
       allow create: if signedIn() && request.resource.data.uid == request.auth.uid;
     }
 
+    // Perfis são públicos: qualquer logado lê. Só o autor publica, edita e apaga;
+    // os demais só alteram as reações.
     match /reviews/{reviewId} {
       allow read: if signedIn();
-      allow create: if signedIn();
-      allow update, delete: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.authorId == request.auth.uid
+        && request.auth.uid in request.resource.data.audienceIds;
+      allow update: if signedIn() && (
+        resource.data.authorId == request.auth.uid ||
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reactions'])
+      );
+      allow delete: if signedIn() && resource.data.authorId == request.auth.uid;
     }
 
     match /matches/{roomId} {

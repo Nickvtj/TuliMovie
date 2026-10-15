@@ -4,7 +4,7 @@ import '../../../../core/presentation/widgets/widgets.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/relative_time_pt.dart';
-import '../../../groups/presentation/widgets/group_badge_chip.dart';
+import '../../../social/presentation/pages/user_profile_page.dart';
 import '../../domain/constants/quick_reactions.dart';
 import '../../domain/entities/review_entity.dart';
 import '../../domain/entities/review_participant_entity.dart';
@@ -22,11 +22,9 @@ class ReviewCardWidget extends StatelessWidget {
     this.onReact,
     this.onShare,
     this.compact = false,
-    this.groupNameMap = const {},
   });
 
   final ReviewEntity review;
-  final Map<String, String> groupNameMap;
   final ReviewCardTap? onOpenMovie;
   final Future<void> Function(String reactionKey)? onReact;
   final VoidCallback? onShare;
@@ -38,26 +36,24 @@ class ReviewCardWidget extends StatelessWidget {
     final author = review.participants.isNotEmpty ? review.participants.first : null;
     final authorRating = author?.rating ?? review.groupAverageRating;
     final timeLabel = formatRelativeTimePt(review.createdAt);
+    final watchedWith = review.participants.skip(1).toList();
 
     return TuliCard(
       onTap: onOpenMovie == null ? null : () => onOpenMovie!(review),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (author != null) _AuthorHeader(author: author, timeLabel: timeLabel),
-          if (review.groupIds.isNotEmpty) ...[
+          if (author != null)
+            _AuthorHeader(
+              author: author,
+              authorId: review.authorId,
+              timeLabel: timeLabel,
+            ),
+          if (watchedWith.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.sm),
-            Wrap(
-              spacing: AppSpacing.sm,
-              runSpacing: AppSpacing.sm,
-              children: [
-                for (final groupId in review.groupIds)
-                  GroupBadgeChip(
-                    groupId: groupId,
-                    label: groupNameMap[groupId] ?? 'Turma',
-                    compact: true,
-                  ),
-              ],
+            Text(
+              'com ${watchedWith.map((p) => p.displayName).join(', ')}',
+              style: textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
             ),
           ],
           const SizedBox(height: AppSpacing.md),
@@ -104,39 +100,56 @@ class ReviewCardWidget extends StatelessWidget {
 }
 
 class _AuthorHeader extends StatelessWidget {
-  const _AuthorHeader({required this.author, required this.timeLabel});
+  const _AuthorHeader({
+    required this.author,
+    required this.authorId,
+    required this.timeLabel,
+  });
 
   final ReviewParticipantEntity author;
+
+  /// Vazio em posts antigos (sem autor gravado) — sem link para o perfil.
+  final String authorId;
   final String timeLabel;
 
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
-    return Row(
-      children: [
-        TuliRingAvatar(
-          displayName: author.displayName,
-          imageUrl: author.photoUrl,
-          size: 40,
-        ),
-        const SizedBox(width: AppSpacing.md),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                author.displayName,
-                style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
-              ),
-              Text(
-                'avaliou $timeLabel',
-                style: textTheme.bodySmall?.copyWith(color: AppColors.textMuted),
-              ),
-            ],
+    return InkWell(
+      borderRadius: AppShape.borderRadiusMd,
+      onTap: authorId.isEmpty
+          ? null
+          : () {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(builder: (_) => UserProfilePage(userId: authorId)),
+              );
+            },
+      child: Row(
+        children: [
+          TuliRingAvatar(
+            displayName: author.displayName,
+            imageUrl: author.photoUrl,
+            size: 40,
           ),
-        ),
-        const Icon(Icons.more_vert_rounded, color: AppColors.textMuted, size: 20),
-      ],
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  author.displayName,
+                  style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+                ),
+                Text(
+                  'avaliou $timeLabel',
+                  style: textTheme.bodySmall?.copyWith(color: AppColors.textMuted),
+                ),
+              ],
+            ),
+          ),
+          const Icon(Icons.more_vert_rounded, color: AppColors.textMuted, size: 20),
+        ],
+      ),
     );
   }
 }
@@ -157,6 +170,8 @@ class _MovieBlock extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final year = review.movieReleaseYear?.toString();
+    final ratedCount = review.participants.where((p) => p.hasSubmittedRating).length;
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -195,11 +210,13 @@ class _MovieBlock extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 4),
-              Text(
-                'Média da turma: ${review.groupAverageRating.toStringAsFixed(1)} ★',
-                style: textTheme.bodySmall?.copyWith(color: AppColors.textMuted),
-              ),
+              if (ratedCount > 1) ...[
+                const SizedBox(height: 4),
+                Text(
+                  'Média de quem assistiu: ${review.groupAverageRating.toStringAsFixed(1)} ★',
+                  style: textTheme.bodySmall?.copyWith(color: AppColors.textMuted),
+                ),
+              ],
             ],
           ),
         ),

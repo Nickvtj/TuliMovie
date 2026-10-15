@@ -13,12 +13,6 @@ class _FirestoreFeedCursor extends FeedCursor {
   final DocumentSnapshot<Map<String, dynamic>> document;
 }
 
-class _MergedFirestoreFeedCursor extends FeedCursor {
-  _MergedFirestoreFeedCursor(this.cursorsByGroup);
-
-  final Map<String, DocumentSnapshot<Map<String, dynamic>>> cursorsByGroup;
-}
-
 class ReviewRepositoryImpl implements ReviewRepository {
   ReviewRepositoryImpl(this._dataSource);
 
@@ -29,14 +23,40 @@ class ReviewRepositoryImpl implements ReviewRepository {
     required String groupId,
     required int limit,
     FeedCursor? cursor,
-  }) async {
-    try {
-      final startAfter = cursor is _FirestoreFeedCursor ? cursor.document : null;
-      final page = await _dataSource.fetchFeedPage(
+  }) {
+    return _toFeedPage(
+      (startAfter) => _dataSource.fetchFeedPage(
         groupId: groupId,
         limit: limit,
         startAfter: startAfter,
-      );
+      ),
+      cursor,
+    );
+  }
+
+  @override
+  Future<FeedPageResult> fetchAudienceFeedPage({
+    required String userId,
+    required int limit,
+    FeedCursor? cursor,
+  }) {
+    return _toFeedPage(
+      (startAfter) => _dataSource.fetchAudienceFeedPage(
+        userId: userId,
+        limit: limit,
+        startAfter: startAfter,
+      ),
+      cursor,
+    );
+  }
+
+  Future<FeedPageResult> _toFeedPage(
+    Future<FeedPageSnapshot> Function(DocumentSnapshot<Map<String, dynamic>>? startAfter) fetch,
+    FeedCursor? cursor,
+  ) async {
+    try {
+      final startAfter = cursor is _FirestoreFeedCursor ? cursor.document : null;
+      final page = await fetch(startAfter);
 
       return FeedPageResult(
         reviews: ReviewMapper.toEntityList(page.reviews),
@@ -50,28 +70,12 @@ class ReviewRepositoryImpl implements ReviewRepository {
   }
 
   @override
-  Future<FeedPageResult> fetchMergedFeedPage({
-    required List<String> groupIds,
-    required int limit,
-    FeedCursor? cursor,
-  }) async {
+  Future<List<ReviewEntity>> getReviewsByAuthor(String authorId) async {
     try {
-      final cursors = cursor is _MergedFirestoreFeedCursor ? cursor.cursorsByGroup : null;
-      final page = await _dataSource.fetchMergedFeedPage(
-        groupIds: groupIds,
-        limit: limit,
-        cursorsByGroup: cursors,
-      );
-
-      return FeedPageResult(
-        reviews: ReviewMapper.toEntityList(page.reviews),
-        hasMore: page.hasMore,
-        nextCursor: page.cursorsByGroup.isEmpty
-            ? null
-            : _MergedFirestoreFeedCursor(page.cursorsByGroup),
-      );
+      final models = await _dataSource.fetchByAuthor(authorId);
+      return ReviewMapper.toEntityList(models);
     } catch (e) {
-      throw AppException(message: 'Erro ao carregar feed.', cause: e);
+      throw AppException(message: 'Erro ao carregar avaliações do perfil.', cause: e);
     }
   }
 

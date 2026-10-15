@@ -24,11 +24,14 @@ abstract interface class ReviewRepository {
     FeedCursor? cursor,
   });
 
-  Future<FeedPageResult> fetchMergedFeedPage({
-    required List<String> groupIds,
+  /// Feed social: posts cuja audiência inclui [userId].
+  Future<FeedPageResult> fetchAudienceFeedPage({
+    required String userId,
     required int limit,
     FeedCursor? cursor,
   });
+
+  Future<List<ReviewEntity>> getReviewsByAuthor(String authorId);
 
   Future<List<ReviewEntity>> getReviewsByMovieId(int tmdbMovieId);
 

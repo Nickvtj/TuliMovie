@@ -1,7 +1,9 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/di/injection.dart';
-import '../../../groups/presentation/providers/group_providers.dart';
+import '../../../auth/presentation/providers/auth_providers.dart';
+import '../../../social/presentation/providers/social_providers.dart';
 import '../../domain/entities/review_entity.dart';
 import '../../domain/repositories/review_repository.dart';
 import '../../domain/usecases/get_feed_page_use_case.dart';
@@ -23,40 +25,31 @@ final getMovieGroupReviewsUseCaseProvider = Provider(
   (ref) => GetMovieGroupReviewsUseCase(ref.watch(reviewRepositoryProvider)),
 );
 
-/// Aba do feed: `null` = Todas as turmas; caso contrário, id da turma.
-final feedTabGroupIdProvider = StateProvider<FeedTabGroupId>((ref) => null);
-
-final groupNameMapProvider = Provider<Map<String, String>>((ref) {
-  final groups = ref.watch(userGroupsProvider).valueOrNull ?? [];
-  return {for (final g in groups) g.id: g.name};
-});
-
 final feedNotifierProvider = StateNotifierProvider<FeedNotifier, FeedState>((ref) {
-  ref.watch(groupBootstrapProvider);
+  final userId = ref.watch(authSessionProvider.select((session) => session.valueOrNull?.id));
 
   final notifier = FeedNotifier(
-    resolveFeedTab: () => ref.read(feedTabGroupIdProvider),
-    resolveMemberGroupIds: () {
-      final groups = ref.read(userGroupsProvider).valueOrNull ?? [];
-      return groups.map((g) => g.id).toList();
+    userId: userId,
+    isVisible: (review) {
+      if (userId == null || review.authorId == userId) return true;
+      // Enquanto a lista de quem sigo carrega, não esconde nada.
+      final followingIds = ref.read(followingIdsProvider(userId)).valueOrNull;
+      return followingIds == null || followingIds.contains(review.authorId);
     },
     getFeedPage: ref.watch(getFeedPageUseCaseProvider),
     toggleReaction: ref.watch(toggleReviewReactionUseCaseProvider),
   );
 
-  ref.listen<FeedTabGroupId>(feedTabGroupIdProvider, (previous, next) {
-    if (next != previous) {
-      notifier.refresh();
-    }
-  });
-
-  ref.listen(userGroupsProvider, (previous, next) {
-    final prevIds = previous?.valueOrNull?.map((g) => g.id).toList() ?? [];
-    final nextIds = next.valueOrNull?.map((g) => g.id).toList() ?? [];
-    if (prevIds.join() != nextIds.join()) {
-      notifier.refresh();
-    }
-  });
+  if (userId != null) {
+    // Recarrega só quando quem eu sigo muda (não na primeira carga).
+    ref.listen(followingIdsProvider(userId), (previous, next) {
+      final before = previous?.valueOrNull;
+      final after = next.valueOrNull;
+      if (before != null && after != null && !setEquals(before, after)) {
+        notifier.refresh();
+      }
+    });
+  }
 
   return notifier;
 });
@@ -64,4 +57,10 @@ final feedNotifierProvider = StateNotifierProvider<FeedNotifier, FeedState>((ref
 final movieGroupReviewsProvider = FutureProvider.family<List<ReviewEntity>, int>((ref, movieId) async {
   final useCase = ref.watch(getMovieGroupReviewsUseCaseProvider);
   return useCase.byMovie(movieId);
+});
+
+/// Posts publicados por um usuário (perfil).
+final userReviewsProvider =
+    FutureProvider.autoDispose.family<List<ReviewEntity>, String>((ref, authorId) {
+  return ref.watch(reviewRepositoryProvider).getReviewsByAuthor(authorId);
 });

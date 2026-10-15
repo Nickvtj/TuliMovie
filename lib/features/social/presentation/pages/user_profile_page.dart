@@ -5,6 +5,9 @@ import '../../../../core/presentation/widgets/widgets.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
+import '../../../feed/presentation/providers/feed_providers.dart';
+import '../../../feed/presentation/widgets/review_card_widget.dart';
+import '../../../movies/presentation/pages/movie_details_page.dart';
 import '../providers/social_providers.dart';
 import '../widgets/follow_button.dart';
 import '../widgets/follow_stats_row.dart';
@@ -74,11 +77,76 @@ class UserProfilePage extends ConsumerWidget {
                     ],
                   ),
                 ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.lg,
+                    AppSpacing.section,
+                    AppSpacing.lg,
+                    AppSpacing.sm,
+                  ),
+                  child: Text('Avaliações', style: textTheme.titleMedium),
+                ),
+                _UserReviewsList(userId: userId),
               ],
             );
           },
         ),
       ),
     );
+  }
+}
+
+class _UserReviewsList extends ConsumerWidget {
+  const _UserReviewsList({required this.userId});
+
+  final String userId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return ref.watch(userReviewsProvider(userId)).when(
+          loading: () => const Padding(
+            padding: EdgeInsets.all(AppSpacing.lg),
+            child: TuliFeedSkeleton(itemCount: 2),
+          ),
+          error: (e, _) => const TuliEmptyState(
+            message: 'Não foi possível carregar as avaliações.',
+            icon: Icons.error_outline_rounded,
+          ),
+          data: (reviews) {
+            if (reviews.isEmpty) {
+              return const Padding(
+                padding: EdgeInsets.all(AppSpacing.lg),
+                child: TuliEmptyState(
+                  message: 'Nenhuma avaliação ainda.',
+                  icon: Icons.movie_filter_outlined,
+                ),
+              );
+            }
+            return Column(
+              children: [
+                for (final review in reviews)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.lg,
+                      0,
+                      AppSpacing.lg,
+                      AppSpacing.md,
+                    ),
+                    child: ReviewCardWidget(
+                      review: review,
+                      compact: true,
+                      onOpenMovie: (_) {
+                        Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => MovieDetailsPage(movieId: review.tmdbMovieId),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+              ],
+            );
+          },
+        );
   }
 }

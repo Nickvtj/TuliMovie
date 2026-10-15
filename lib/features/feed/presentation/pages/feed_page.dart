@@ -3,11 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/presentation/widgets/widgets.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_theme.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
-import '../../../groups/domain/entities/group_entity.dart';
-import '../../../groups/presentation/pages/group_hub_page.dart';
-import '../../../groups/presentation/providers/group_providers.dart';
 import '../../../movies/presentation/pages/movie_details_page.dart';
 import '../../../share/presentation/providers/share_providers.dart';
 import '../../../social/presentation/pages/user_search_page.dart';
@@ -49,9 +45,6 @@ class _FeedPageState extends ConsumerState<FeedPage> {
   @override
   Widget build(BuildContext context) {
     final feed = ref.watch(feedNotifierProvider);
-    final groupsAsync = ref.watch(userGroupsProvider);
-    final selectedTab = ref.watch(feedTabGroupIdProvider);
-    final groupNames = ref.watch(groupNameMapProvider);
 
     return Scaffold(
       body: RefreshIndicator(
@@ -70,7 +63,8 @@ class _FeedPageState extends ConsumerState<FeedPage> {
                 child: TuliScreenHeader(
                   mode: TuliScreenHeaderMode.root,
                   leadingStatusDot: true,
-                  title: 'Feed das comunidades',
+                  title: 'Feed',
+                  subtitle: 'Você e quem você segue',
                   trailingActions: [
                     TuliIconButtonCircle(
                       icon: Icons.person_search_rounded,
@@ -81,30 +75,7 @@ class _FeedPageState extends ConsumerState<FeedPage> {
                         );
                       },
                     ),
-                    const SizedBox(width: AppSpacing.sm),
-                    TuliIconButtonCircle(
-                      icon: Icons.groups_rounded,
-                      tooltip: 'Turma',
-                      onPressed: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute<void>(builder: (_) => const GroupHubPage()),
-                        );
-                      },
-                    ),
                   ],
-                ),
-              ),
-            ),
-            SliverToBoxAdapter(
-              child: groupsAsync.when(
-                loading: () => const SizedBox.shrink(),
-                error: (_, __) => const SizedBox.shrink(),
-                data: (groups) => _FeedGroupTabs(
-                  groups: groups,
-                  selectedGroupId: selectedTab,
-                  onSelected: (id) {
-                    ref.read(feedTabGroupIdProvider.notifier).state = id;
-                  },
                 ),
               ),
             ),
@@ -120,7 +91,7 @@ class _FeedPageState extends ConsumerState<FeedPage> {
                 hasScrollBody: false,
                 child: TuliEmptyState(
                   message: feed.errorMessage ??
-                      'Nenhuma avaliação ainda.\nToque no + para buscar um filme e avaliar!',
+                      'Seu feed está vazio.\nSiga pessoas pela lupa ou toque no + para avaliar!',
                   icon: Icons.dynamic_feed_outlined,
                 ),
               )
@@ -141,7 +112,6 @@ class _FeedPageState extends ConsumerState<FeedPage> {
                     final review = feed.reviews[index];
                     return ReviewCardWidget(
                       review: review,
-                      groupNameMap: groupNames,
                       onShare: () async {
                         try {
                           await ref.read(shareReviewCardUseCaseProvider).call(review);
@@ -171,49 +141,6 @@ class _FeedPageState extends ConsumerState<FeedPage> {
                             },
                     );
                   },
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _FeedGroupTabs extends StatelessWidget {
-  const _FeedGroupTabs({
-    required this.groups,
-    required this.selectedGroupId,
-    required this.onSelected,
-  });
-
-  final List<GroupEntity> groups;
-  final String? selectedGroupId;
-  final ValueChanged<String?> onSelected;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.section),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(right: AppSpacing.sm),
-              child: TuliFilterChip(
-                label: 'Todas',
-                selected: selectedGroupId == null,
-                onSelected: () => onSelected(null),
-              ),
-            ),
-            for (final group in groups)
-              Padding(
-                padding: const EdgeInsets.only(right: AppSpacing.sm),
-                child: TuliFilterChip(
-                  label: group.name,
-                  selected: selectedGroupId == group.id,
-                  onSelected: () => onSelected(group.id),
                 ),
               ),
           ],

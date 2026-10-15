@@ -50,7 +50,12 @@ final followStatusProvider =
   );
 });
 
-final followersCountProvider = FutureProvider.autoDispose.family<int, String>((ref, userId) {
+/// Ids de quem [userId] segue, em tempo real.
+final followingIdsProvider = StreamProvider.family<Set<String>, String>((ref, userId) {
+  return ref.watch(socialRepositoryProvider).watchFollowingIds(userId);
+});
+
+final followersCountProvider =FutureProvider.autoDispose.family<int, String>((ref, userId) {
   return ref.watch(socialRepositoryProvider).countFollowers(userId);
 });
 

@@ -50,6 +50,8 @@ class ReviewModel {
     this.authorAnswers = const {},
     this.groupId,
     this.groupIds = const [],
+    this.authorId = '',
+    this.audienceIds = const [],
   });
 
   final String id;
@@ -66,6 +68,10 @@ class ReviewModel {
   final Map<String, double> authorAnswers;
   final String? groupId;
   final List<String> groupIds;
+  final String authorId;
+
+  /// Quem recebe o post no feed: autor + seguidores no momento da publicação.
+  final List<String> audienceIds;
 
   List<String> get resolvedGroupIds {
     if (groupIds.isNotEmpty) return groupIds;
@@ -102,6 +108,10 @@ class ReviewModel {
       authorAnswers: _parseAuthorAnswers(json['authorAnswers']),
       groupId: json['groupId'] as String?,
       groupIds: _parseGroupIds(json),
+      authorId: json['authorId'] as String? ?? '',
+      audienceIds: (json['audienceIds'] as List<dynamic>? ?? [])
+          .map((e) => e.toString())
+          .toList(),
     );
   }
 
@@ -131,6 +141,8 @@ class ReviewModel {
       authorAnswers: authorAnswers,
       groupId: groupId,
       groupIds: groupIds,
+      authorId: authorId,
+      audienceIds: audienceIds,
     );
   }
 
@@ -149,6 +161,8 @@ class ReviewModel {
       if (authorAnswers.isNotEmpty) 'authorAnswers': authorAnswers,
       if (resolvedGroupIds.isNotEmpty) 'groupIds': resolvedGroupIds,
       if (resolvedGroupIds.isNotEmpty) 'groupId': resolvedGroupIds.first,
+      if (authorId.isNotEmpty) 'authorId': authorId,
+      if (audienceIds.isNotEmpty) 'audienceIds': audienceIds,
     };
   }
 

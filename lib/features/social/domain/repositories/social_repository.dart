@@ -10,6 +10,8 @@ abstract interface class SocialRepository {
   /// `true` enquanto [userId] segue [targetId].
   Stream<bool> watchIsFollowing({required String userId, required String targetId});
 
+  Stream<Set<String>> watchFollowingIds(String userId);
+
   Future<int> countFollowers(String userId);
 
   Future<int> countFollowing(String userId);

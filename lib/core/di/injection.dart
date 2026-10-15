@@ -25,6 +25,7 @@ import '../../features/reviews/domain/repositories/group_members_repository.dart
 import '../../features/reviews/domain/repositories/review_write_repository.dart';
 import '../../features/reviews/domain/usecases/create_review_use_case.dart';
 import '../../features/reviews/domain/usecases/list_group_members_use_case.dart';
+import '../../features/reviews/domain/usecases/list_taggable_friends_use_case.dart';
 import '../../features/awards/data/datasources/awards_firestore_data_source.dart';
 import '../../features/awards/data/repositories/awards_repository_impl.dart';
 import '../../features/awards/domain/repositories/awards_repository.dart';
@@ -126,7 +127,10 @@ Future<void> configureDependencies() async {
       ),
     )
     ..registerLazySingleton<ReviewWriteRepository>(
-      () => ReviewWriteRepositoryImpl(sl<ReviewFirestoreDataSource>()),
+      () => ReviewWriteRepositoryImpl(
+        sl<ReviewFirestoreDataSource>(),
+        sl<FollowFirestoreDataSource>(),
+      ),
     )
     ..registerLazySingleton(() => ListGroupMembersUseCase(sl<GroupMembersRepository>()))
     ..registerLazySingleton(() => CreateReviewUseCase(sl<ReviewWriteRepository>()))
@@ -192,5 +196,6 @@ Future<void> configureDependencies() async {
     )
     ..registerLazySingleton(() => SearchUsersUseCase(sl<SocialRepository>()))
     ..registerLazySingleton(() => FollowUserUseCase(sl<SocialRepository>()))
-    ..registerLazySingleton(() => UnfollowUserUseCase(sl<SocialRepository>()));
+    ..registerLazySingleton(() => UnfollowUserUseCase(sl<SocialRepository>()))
+    ..registerLazySingleton(() => ListTaggableFriendsUseCase(sl<SocialRepository>()));
 }
