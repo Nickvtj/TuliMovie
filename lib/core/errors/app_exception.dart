@@ -11,7 +11,7 @@ enum AppExceptionType {
   unknown,
 }
 
-/// Exceções da camada de dados — convertidas em [Failure] no domínio/presentation.
+/// Exceções da camada de dados — propagadas até a presentation.
 class AppException extends Equatable implements Exception {
   const AppException({
     required this.message,

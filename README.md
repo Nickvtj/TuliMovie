@@ -78,9 +78,8 @@ Firestore: coleção `reviews` + índices compostos (`createdAt`, `tmdbMovieId+c
 ## Dinâmicas (Fase 5)
 
 - `matches/` — salas temporárias + subcoleção `swipes`
-- `watchlist/shared/items` — roleta
-- `cinepass/queue` — fila semanal
-- Aba **Diversão** → Cinepass, Roleta, Tinder do Cinema
+- `groups/{id}/watchlist/shared/items` — roleta
+- Aba **Diversão** → Watchlist, Sala Match
 
 ## Engajamento (Fase 6)
 

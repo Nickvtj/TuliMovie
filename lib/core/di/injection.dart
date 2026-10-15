@@ -48,7 +48,6 @@ import '../../features/movie_match/data/datasources/match_room_firestore_data_so
 import '../../features/movie_match/data/repositories/match_room_repository_impl.dart';
 import '../../features/movie_match/domain/repositories/match_room_repository.dart';
 import '../../features/movie_match/domain/usecases/pick_match_candidates_use_case.dart';
-import '../../features/tools/data/datasources/cinepass_firestore_data_source.dart';
 import '../../features/tools/data/datasources/watchlist_firestore_data_source.dart';
 import '../../features/movies/data/datasources/tmdb_remote_data_source.dart';
 import '../../features/movies/data/repositories/movie_repository_impl.dart';
@@ -150,9 +149,6 @@ Future<void> configureDependencies() async {
         watchedMoviesRepository: sl<WatchedMoviesRepository>(),
         watchlistDataSource: sl<WatchlistFirestoreDataSource>(),
       ),
-    )
-    ..registerLazySingleton<CinepassFirestoreDataSource>(
-      CinepassFirestoreDataSource.new,
     )
     ..registerLazySingleton<PushNotificationService>(PushNotificationService.new)
     ..registerLazySingleton<ImageExportService>(ImageExportService.new)
