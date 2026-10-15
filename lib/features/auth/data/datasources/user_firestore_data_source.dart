@@ -21,6 +21,9 @@ abstract interface class UserFirestoreDataSource {
 
   Future<bool> isUsernameAvailable(String username);
 
+  /// Dono do @ ou `null` se não existir.
+  Future<String?> findUserIdByUsername(String username);
+
   /// Reserva `usernames/{username}` e grava no perfil, atomicamente.
   Future<void> claimUsername({required String userId, required String username});
 }
@@ -129,12 +132,16 @@ class UserFirestoreDataSourceImpl implements UserFirestoreDataSource {
 
   @override
   Future<bool> isUsernameAvailable(String username) async {
-    final ownerId = await _firestore.read<String?>(
+    return await findUserIdByUsername(username) == null;
+  }
+
+  @override
+  Future<String?> findUserIdByUsername(String username) {
+    return _firestore.read<String?>(
       collectionPath: usernamesCollectionPath,
       documentId: username,
       fromJson: (json) => json['uid'] as String?,
     );
-    return ownerId == null;
   }
 
   @override

@@ -43,6 +43,13 @@ import '../../features/profile/domain/usecases/mark_movie_watched_use_case.dart'
 import '../../features/tools/domain/usecases/add_watchlist_item_use_case.dart';
 import '../../features/tools/domain/usecases/toggle_watchlist_item_use_case.dart';
 import '../../features/share/domain/usecases/share_review_card_use_case.dart';
+import '../../features/comments/data/datasources/comment_firestore_data_source.dart';
+import '../../features/comments/data/repositories/comment_repository_impl.dart';
+import '../../features/comments/domain/repositories/comment_repository.dart';
+import '../../features/comments/domain/usecases/add_comment_use_case.dart';
+import '../../features/notifications/data/datasources/notification_firestore_data_source.dart';
+import '../../features/notifications/data/repositories/notification_repository_impl.dart';
+import '../../features/notifications/domain/repositories/notification_repository.dart';
 import '../../features/social/data/datasources/follow_firestore_data_source.dart';
 import '../../features/social/data/repositories/social_repository_impl.dart';
 import '../../features/social/domain/repositories/social_repository.dart';
@@ -192,10 +199,25 @@ Future<void> configureDependencies() async {
       () => SocialRepositoryImpl(
         follows: sl<FollowFirestoreDataSource>(),
         users: sl<UserFirestoreDataSource>(),
+        notifications: sl<NotificationFirestoreDataSource>(),
       ),
     )
     ..registerLazySingleton(() => SearchUsersUseCase(sl<SocialRepository>()))
     ..registerLazySingleton(() => FollowUserUseCase(sl<SocialRepository>()))
     ..registerLazySingleton(() => UnfollowUserUseCase(sl<SocialRepository>()))
-    ..registerLazySingleton(() => ListTaggableFriendsUseCase(sl<SocialRepository>()));
+    ..registerLazySingleton(() => ListTaggableFriendsUseCase(sl<SocialRepository>()))
+    ..registerLazySingleton<NotificationFirestoreDataSource>(NotificationFirestoreDataSource.new)
+    ..registerLazySingleton<NotificationRepository>(
+      () => NotificationRepositoryImpl(sl<NotificationFirestoreDataSource>()),
+    )
+    ..registerLazySingleton<CommentFirestoreDataSource>(CommentFirestoreDataSource.new)
+    ..registerLazySingleton<CommentRepository>(
+      () => CommentRepositoryImpl(
+        comments: sl<CommentFirestoreDataSource>(),
+        reviews: sl<ReviewFirestoreDataSource>(),
+        users: sl<UserFirestoreDataSource>(),
+        notifications: sl<NotificationFirestoreDataSource>(),
+      ),
+    )
+    ..registerLazySingleton(() => AddCommentUseCase(sl<CommentRepository>()));
 }

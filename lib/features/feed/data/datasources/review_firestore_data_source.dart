@@ -31,6 +31,8 @@ abstract interface class ReviewFirestoreDataSource {
 
   Future<List<ReviewModel>> fetchByAuthor(String authorId, {int limit = 30});
 
+  Future<ReviewModel?> fetchById(String reviewId);
+
   Future<void> migrateLegacyReviewsToGroup(String groupId);
 
   Future<void> backfillGroupIdsArray(String groupId);
@@ -93,6 +95,14 @@ class ReviewFirestoreDataSourceImpl implements ReviewFirestoreDataSource {
       limit: limit,
     );
     return page.reviews;
+  }
+
+  @override
+  Future<ReviewModel?> fetchById(String reviewId) async {
+    final snap = await _collection.doc(reviewId).get();
+    final data = snap.data();
+    if (!snap.exists || data == null) return null;
+    return ReviewModel.fromJson({...data, 'id': snap.id});
   }
 
   Future<FeedPageSnapshot> _fetchPage(

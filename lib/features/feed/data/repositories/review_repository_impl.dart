@@ -80,6 +80,16 @@ class ReviewRepositoryImpl implements ReviewRepository {
   }
 
   @override
+  Future<ReviewEntity?> getReviewById(String reviewId) async {
+    try {
+      final model = await _dataSource.fetchById(reviewId);
+      return model == null ? null : ReviewMapper.toEntity(model);
+    } catch (e) {
+      throw AppException(message: 'Erro ao carregar a avaliação.', cause: e);
+    }
+  }
+
+  @override
   Future<List<ReviewEntity>> getReviewsByMovieId(int tmdbMovieId) async {
     try {
       final models = await _dataSource.fetchByMovieId(tmdbMovieId);

@@ -59,6 +59,11 @@ final movieGroupReviewsProvider = FutureProvider.family<List<ReviewEntity>, int>
   return useCase.byMovie(movieId);
 });
 
+final reviewByIdProvider =
+    FutureProvider.autoDispose.family<ReviewEntity?, String>((ref, reviewId) {
+  return ref.watch(reviewRepositoryProvider).getReviewById(reviewId);
+});
+
 /// Posts publicados por um usuário (perfil).
 final userReviewsProvider =
     FutureProvider.autoDispose.family<List<ReviewEntity>, String>((ref, authorId) {

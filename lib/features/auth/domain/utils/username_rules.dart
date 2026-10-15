@@ -3,7 +3,10 @@ abstract final class UsernameRules {
   static const minLength = 3;
   static const maxLength = 20;
 
-  static final _allowed = RegExp(r'^[a-z0-9._]+$');
+  /// Classe de caracteres aceitos (também usada para achar menções em textos).
+  static const allowedChars = 'a-z0-9._';
+
+  static final _allowed = RegExp('^[$allowedChars]+\$');
 
   /// Remove `@` inicial e espaços; sempre minúsculo.
   static String normalize(String value) {

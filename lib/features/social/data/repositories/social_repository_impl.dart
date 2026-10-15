@@ -5,6 +5,9 @@ import '../../../auth/data/datasources/user_firestore_data_source.dart';
 import '../../../auth/data/mappers/user_mapper.dart';
 import '../../../auth/data/models/user_model.dart';
 import '../../../auth/domain/entities/user_entity.dart';
+import '../../../notifications/data/datasources/notification_firestore_data_source.dart';
+import '../../../notifications/data/models/notification_model.dart';
+import '../../../notifications/domain/entities/notification_entity.dart';
 import '../../domain/repositories/social_repository.dart';
 import '../datasources/follow_firestore_data_source.dart';
 
@@ -12,11 +15,14 @@ class SocialRepositoryImpl implements SocialRepository {
   SocialRepositoryImpl({
     required FollowFirestoreDataSource follows,
     required UserFirestoreDataSource users,
+    required NotificationFirestoreDataSource notifications,
   })  : _follows = follows,
-        _users = users;
+        _users = users,
+        _notifications = notifications;
 
   final FollowFirestoreDataSource _follows;
   final UserFirestoreDataSource _users;
+  final NotificationFirestoreDataSource _notifications;
 
   @override
   Future<List<UserEntity>> searchUsers(String prefix) async {
@@ -25,8 +31,26 @@ class SocialRepositoryImpl implements SocialRepository {
   }
 
   @override
-  Future<void> follow({required String userId, required String targetId}) {
-    return _guard(() => _follows.follow(userId: userId, targetId: targetId));
+  Future<void> follow({required String userId, required String targetId}) async {
+    await _guard(() => _follows.follow(userId: userId, targetId: targetId));
+    await _notifyFollow(userId: userId, targetId: targetId);
+  }
+
+  /// Melhor esforço: o follow já valeu mesmo se o aviso falhar.
+  Future<void> _notifyFollow({required String userId, required String targetId}) async {
+    try {
+      final actor = await _users.getUser(userId);
+      if (actor == null) return;
+      await _notifications.createMany([
+        NotificationModel(
+          recipientId: targetId,
+          type: NotificationType.follow,
+          actorId: actor.id,
+          actorName: actor.displayName,
+          actorPhotoUrl: actor.photoUrl,
+        ),
+      ]);
+    } catch (_) {}
   }
 
   @override

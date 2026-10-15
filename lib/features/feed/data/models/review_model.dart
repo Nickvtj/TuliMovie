@@ -52,6 +52,7 @@ class ReviewModel {
     this.groupIds = const [],
     this.authorId = '',
     this.audienceIds = const [],
+    this.commentCount = 0,
   });
 
   final String id;
@@ -72,6 +73,9 @@ class ReviewModel {
 
   /// Quem recebe o post no feed: autor + seguidores no momento da publicação.
   final List<String> audienceIds;
+
+  /// Mantido por incremento atômico ao comentar.
+  final int commentCount;
 
   List<String> get resolvedGroupIds {
     if (groupIds.isNotEmpty) return groupIds;
@@ -112,6 +116,7 @@ class ReviewModel {
       audienceIds: (json['audienceIds'] as List<dynamic>? ?? [])
           .map((e) => e.toString())
           .toList(),
+      commentCount: (json['commentCount'] as num?)?.toInt() ?? 0,
     );
   }
 
@@ -143,6 +148,7 @@ class ReviewModel {
       groupIds: groupIds,
       authorId: authorId,
       audienceIds: audienceIds,
+      commentCount: commentCount,
     );
   }
 
@@ -163,6 +169,7 @@ class ReviewModel {
       if (resolvedGroupIds.isNotEmpty) 'groupId': resolvedGroupIds.first,
       if (authorId.isNotEmpty) 'authorId': authorId,
       if (audienceIds.isNotEmpty) 'audienceIds': audienceIds,
+      'commentCount': commentCount,
     };
   }
 

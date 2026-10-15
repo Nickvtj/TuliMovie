@@ -4,6 +4,7 @@ import '../../../../core/presentation/widgets/widgets.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/relative_time_pt.dart';
+import '../../../comments/presentation/pages/review_comments_page.dart';
 import '../../../social/presentation/pages/user_profile_page.dart';
 import '../../domain/constants/quick_reactions.dart';
 import '../../domain/entities/review_entity.dart';
@@ -75,6 +76,17 @@ class ReviewCardWidget extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
+              TextButton.icon(
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => ReviewCommentsPage(reviewId: review.id),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.chat_bubble_outline_rounded, size: 18),
+                label: Text(review.commentCount > 0 ? '${review.commentCount}' : 'Comentar'),
+              ),
               if (onShare != null)
                 TextButton.icon(
                   onPressed: onShare,

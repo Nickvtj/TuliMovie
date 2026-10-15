@@ -18,6 +18,7 @@ class ReviewEntity extends Equatable {
     this.containsSpoiler = false,
     this.groupIds = const [],
     this.authorId = '',
+    this.commentCount = 0,
   });
 
   final String id;
@@ -35,6 +36,7 @@ class ReviewEntity extends Equatable {
   final bool containsSpoiler;
   final List<String> groupIds;
   final String authorId;
+  final int commentCount;
 
   bool get hasDiscordBadge => DiscordBadgeCalculator.shouldShow(participants);
 
@@ -65,5 +67,6 @@ class ReviewEntity extends Equatable {
         containsSpoiler,
         groupIds,
         authorId,
+        commentCount,
       ];
 }

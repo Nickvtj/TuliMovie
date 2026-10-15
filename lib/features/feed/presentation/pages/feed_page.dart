@@ -3,8 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/presentation/widgets/widgets.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_theme.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../../movies/presentation/pages/movie_details_page.dart';
+import '../../../notifications/presentation/pages/notifications_page.dart';
+import '../../../notifications/presentation/providers/notification_providers.dart';
 import '../../../share/presentation/providers/share_providers.dart';
 import '../../../social/presentation/pages/user_search_page.dart';
 import '../providers/feed_providers.dart';
@@ -66,6 +69,8 @@ class _FeedPageState extends ConsumerState<FeedPage> {
                   title: 'Feed',
                   subtitle: 'Você e quem você segue',
                   trailingActions: [
+                    const _NotificationsButton(),
+                    const SizedBox(width: AppSpacing.sm),
                     TuliIconButtonCircle(
                       icon: Icons.person_search_rounded,
                       tooltip: 'Buscar pessoas',
@@ -146,6 +151,44 @@ class _FeedPageState extends ConsumerState<FeedPage> {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Sino com contador de notificações não lidas.
+class _NotificationsButton extends ConsumerWidget {
+  const _NotificationsButton();
+
+  static const _maxShown = 99;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final unread = ref.watch(unreadNotificationsCountProvider).valueOrNull ?? 0;
+
+    return TuliIconButtonCircle(
+      icon: Icons.notifications_none_rounded,
+      tooltip: 'Notificações',
+      onPressed: () {
+        Navigator.of(context).push(
+          MaterialPageRoute<void>(builder: (_) => const NotificationsPage()),
+        );
+      },
+      badge: unread == 0
+          ? null
+          : Container(
+              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+              decoration: BoxDecoration(
+                color: AppColors.gold,
+                borderRadius: AppShape.borderRadiusPill,
+              ),
+              child: Text(
+                unread > _maxShown ? '$_maxShown+' : '$unread',
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: AppColors.backgroundDeep,
+                      fontWeight: FontWeight.w700,
+                    ),
+              ),
+            ),
     );
   }
 }

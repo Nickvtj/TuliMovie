@@ -33,6 +33,8 @@ abstract interface class ReviewRepository {
 
   Future<List<ReviewEntity>> getReviewsByAuthor(String authorId);
 
+  Future<ReviewEntity?> getReviewById(String reviewId);
+
   Future<List<ReviewEntity>> getReviewsByMovieId(int tmdbMovieId);
 
   Future<List<ReviewEntity>> getReviewsByMovieIds(List<int> tmdbMovieIds);
