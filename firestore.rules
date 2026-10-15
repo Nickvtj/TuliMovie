@@ -35,7 +35,7 @@ service cloud.firestore {
         allow create: if signedIn()
           && request.resource.data.actorId == request.auth.uid
           && userId != request.auth.uid
-          && request.resource.data.type in ['follow', 'comment', 'mention']
+          && request.resource.data.type in ['follow', 'comment', 'mention', 'matchInvite']
           && request.resource.data.read == false;
       }
     }
@@ -74,10 +74,45 @@ service cloud.firestore {
       }
     }
 
+    // Sala de Match: só host, convidados e quem já entrou enxergam a sala.
     match /matches/{roomId} {
-      allow read, write: if signedIn();
+      function room() {
+        return get(/databases/$(database)/documents/matches/$(roomId)).data;
+      }
+      function isParticipant() {
+        return request.auth.uid in room().participantIds;
+      }
+
+      allow get: if signedIn() && (
+        request.auth.uid == resource.data.hostId ||
+        request.auth.uid in resource.data.participantIds ||
+        request.auth.uid in resource.data.get('invitedIds', [])
+      );
+      allow create: if signedIn()
+        && request.resource.data.hostId == request.auth.uid
+        && request.resource.data.participantIds == [request.auth.uid];
+      allow update: if signedIn() && (
+        // Host controla a sala.
+        resource.data.hostId == request.auth.uid ||
+        // Convidado só se adiciona aos participantes.
+        (
+          request.auth.uid in resource.data.get('invitedIds', []) &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['participantIds']) &&
+          request.resource.data.participantIds.toSet()
+            == resource.data.participantIds.toSet().union([request.auth.uid].toSet())
+        ) ||
+        // Qualquer participante registra o match encontrado.
+        (
+          request.auth.uid in resource.data.participantIds &&
+          request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['status', 'matchedMovieId']) &&
+          request.resource.data.status == 'matched'
+        )
+      );
+
       match /swipes/{userId} {
-        allow read, write: if signedIn();
+        allow read: if signedIn() && isParticipant();
+        allow write: if signedIn() && request.auth.uid == userId && isParticipant();
       }
     }
 

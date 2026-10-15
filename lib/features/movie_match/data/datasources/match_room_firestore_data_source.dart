@@ -42,6 +42,7 @@ class MatchRoomFirestoreDataSource {
       id: doc.id,
       hostId: room.hostId,
       participantIds: room.participantIds,
+      invitedIds: room.invitedIds,
       filters: room.filters,
       candidates: room.candidates,
       status: room.status,
@@ -88,22 +89,5 @@ class MatchRoomFirestoreDataSource {
       'status': MatchRoomStatus.matched.name,
       'matchedMovieId': tmdbMovieId,
     });
-  }
-
-  Future<MatchRoomModel?> findRoomByShortCode(String shortCode) async {
-    final normalized = shortCode.trim().toUpperCase();
-    if (normalized.length < 4) return null;
-
-    final snapshot = await _rooms
-        .orderBy('createdAt', descending: true)
-        .limit(40)
-        .get();
-
-    for (final doc in snapshot.docs) {
-      if (doc.id.toUpperCase().startsWith(normalized)) {
-        return MatchRoomModel.fromJson({...doc.data(), 'id': doc.id});
-      }
-    }
-    return null;
   }
 }

@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../../../auth/domain/entities/user_entity.dart';
 import '../../domain/entities/notification_entity.dart';
 
 class NotificationModel {
@@ -13,9 +14,33 @@ class NotificationModel {
     this.reviewId,
     this.movieTitle,
     this.text,
+    this.roomId,
     this.createdAt,
     this.read = false,
   });
+
+  /// Aviso novo em nome de [actor] (quem seguiu, comentou ou convidou).
+  factory NotificationModel.fromActor({
+    required String recipientId,
+    required NotificationType type,
+    required UserEntity actor,
+    String? reviewId,
+    String? movieTitle,
+    String? text,
+    String? roomId,
+  }) {
+    return NotificationModel(
+      recipientId: recipientId,
+      type: type,
+      actorId: actor.id,
+      actorName: actor.displayName,
+      actorPhotoUrl: actor.photoUrl,
+      reviewId: reviewId,
+      movieTitle: movieTitle,
+      text: text,
+      roomId: roomId,
+    );
+  }
 
   final String id;
 
@@ -28,6 +53,7 @@ class NotificationModel {
   final String? reviewId;
   final String? movieTitle;
   final String? text;
+  final String? roomId;
   final DateTime? createdAt;
   final bool read;
 
@@ -42,6 +68,7 @@ class NotificationModel {
       reviewId: json['reviewId'] as String?,
       movieTitle: json['movieTitle'] as String?,
       text: json['text'] as String?,
+      roomId: json['roomId'] as String?,
       createdAt: (json['createdAt'] as Timestamp?)?.toDate(),
       read: json['read'] as bool? ?? false,
     );
@@ -56,6 +83,7 @@ class NotificationModel {
       if (reviewId != null) 'reviewId': reviewId,
       if (movieTitle != null) 'movieTitle': movieTitle,
       if (text != null) 'text': text,
+      if (roomId != null) 'roomId': roomId,
       'createdAt': FieldValue.serverTimestamp(),
       'read': read,
     };
@@ -71,6 +99,7 @@ class NotificationModel {
       reviewId: reviewId,
       movieTitle: movieTitle,
       text: text,
+      roomId: roomId,
       // Escrita local pendente ainda sem horário do servidor.
       createdAt: createdAt ?? DateTime.now(),
       read: read,

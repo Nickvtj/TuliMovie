@@ -42,12 +42,10 @@ class SocialRepositoryImpl implements SocialRepository {
       final actor = await _users.getUser(userId);
       if (actor == null) return;
       await _notifications.createMany([
-        NotificationModel(
+        NotificationModel.fromActor(
           recipientId: targetId,
           type: NotificationType.follow,
-          actorId: actor.id,
-          actorName: actor.displayName,
-          actorPhotoUrl: actor.photoUrl,
+          actor: UserMapper.toEntity(actor),
         ),
       ]);
     } catch (_) {}

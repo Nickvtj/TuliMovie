@@ -9,6 +9,7 @@ class MatchRoomModel {
     required this.id,
     required this.hostId,
     required this.participantIds,
+    this.invitedIds = const [],
     required this.filters,
     required this.candidates,
     required this.status,
@@ -20,6 +21,7 @@ class MatchRoomModel {
   final String id;
   final String hostId;
   final List<String> participantIds;
+  final List<String> invitedIds;
   final MatchFiltersEntity filters;
   final List<MatchCandidateEntity> candidates;
   final MatchRoomStatus status;
@@ -50,6 +52,9 @@ class MatchRoomModel {
       participantIds: (json['participantIds'] as List<dynamic>? ?? [])
           .map((e) => e.toString())
           .toList(),
+      invitedIds: (json['invitedIds'] as List<dynamic>? ?? [])
+          .map((e) => e.toString())
+          .toList(),
       filters: _parseFilters(filtersMap),
       candidates: candidates,
       status: MatchRoomStatus.values.byName(json['status'] as String? ?? 'waiting'),
@@ -63,6 +68,7 @@ class MatchRoomModel {
     return {
       'hostId': hostId,
       'participantIds': participantIds,
+      'invitedIds': invitedIds,
       'filters': _filtersToJson(filters),
       'candidates': candidates
           .map(
@@ -89,6 +95,7 @@ class MatchRoomModel {
       id: id,
       hostId: hostId,
       participantIds: participantIds,
+      invitedIds: invitedIds,
       filters: filters,
       candidates: candidates,
       status: status,

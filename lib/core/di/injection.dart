@@ -145,7 +145,10 @@ Future<void> configureDependencies() async {
       MatchRoomFirestoreDataSource.new,
     )
     ..registerLazySingleton<MatchRoomRepository>(
-      () => MatchRoomRepositoryImpl(sl<MatchRoomFirestoreDataSource>()),
+      () => MatchRoomRepositoryImpl(
+        sl<MatchRoomFirestoreDataSource>(),
+        sl<NotificationFirestoreDataSource>(),
+      ),
     )
     ..registerLazySingleton<WatchedMoviesFirestoreDataSource>(
       WatchedMoviesFirestoreDataSource.new,

@@ -1,4 +1,8 @@
 import '../../../../core/errors/app_exception.dart';
+import '../../../auth/domain/entities/user_entity.dart';
+import '../../../notifications/data/datasources/notification_firestore_data_source.dart';
+import '../../../notifications/data/models/notification_model.dart';
+import '../../../notifications/domain/entities/notification_entity.dart';
 import '../../domain/entities/match_candidate_entity.dart';
 import '../../domain/entities/match_filters_entity.dart';
 import '../../domain/entities/match_room_entity.dart';
@@ -7,9 +11,10 @@ import '../datasources/match_room_firestore_data_source.dart';
 import '../models/match_room_model.dart';
 
 class MatchRoomRepositoryImpl implements MatchRoomRepository {
-  MatchRoomRepositoryImpl(this._dataSource);
+  MatchRoomRepositoryImpl(this._dataSource, this._notifications);
 
   final MatchRoomFirestoreDataSource _dataSource;
+  final NotificationFirestoreDataSource _notifications;
 
   @override
   Stream<MatchRoomEntity?> watchRoom(String roomId) {
@@ -23,28 +28,51 @@ class MatchRoomRepositoryImpl implements MatchRoomRepository {
 
   @override
   Future<MatchRoomEntity> createRoom({
-    required String hostId,
-    required List<String> participantIds,
+    required UserEntity host,
+    required List<String> invitedIds,
     required MatchFiltersEntity filters,
     required List<MatchCandidateEntity> candidates,
   }) async {
+    final invited = invitedIds.where((id) => id != host.id).toSet().toList();
+    final MatchRoomModel model;
     try {
-      final uniqueParticipants = {hostId, ...participantIds}.toList();
-      final model = await _dataSource.createRoom(
+      model = await _dataSource.createRoom(
         MatchRoomModel(
           id: '',
-          hostId: hostId,
-          participantIds: uniqueParticipants,
+          hostId: host.id,
+          participantIds: [host.id],
+          invitedIds: invited,
           filters: filters,
           candidates: candidates,
           status: MatchRoomStatus.waiting,
           createdAt: DateTime.now(),
         ),
       );
-      return model.toEntity();
     } catch (e) {
       throw AppException(message: 'Erro ao criar sala.', cause: e);
     }
+
+    await _notifyInvited(roomId: model.id, host: host, invitedIds: invited);
+    return model.toEntity();
+  }
+
+  /// Melhor esforço: a sala já existe mesmo se algum aviso falhar.
+  Future<void> _notifyInvited({
+    required String roomId,
+    required UserEntity host,
+    required List<String> invitedIds,
+  }) async {
+    try {
+      await _notifications.createMany([
+        for (final userId in invitedIds)
+          NotificationModel.fromActor(
+            recipientId: userId,
+            type: NotificationType.matchInvite,
+            actor: host,
+            roomId: roomId,
+          ),
+      ]);
+    } catch (_) {}
   }
 
   @override
@@ -79,11 +107,5 @@ class MatchRoomRepositoryImpl implements MatchRoomRepository {
   @override
   Future<void> markMatched({required String roomId, required int tmdbMovieId}) {
     return _dataSource.markMatched(roomId: roomId, tmdbMovieId: tmdbMovieId);
-  }
-
-  @override
-  Future<MatchRoomEntity?> findRoomByShortCode(String shortCode) async {
-    final model = await _dataSource.findRoomByShortCode(shortCode);
-    return model?.toEntity();
   }
 }

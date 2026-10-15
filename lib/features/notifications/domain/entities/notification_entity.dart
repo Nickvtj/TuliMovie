@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 
-enum NotificationType { follow, comment, mention }
+enum NotificationType { follow, comment, mention, matchInvite }
 
 /// Aviso dentro do app (`users/{uid}/notifications`).
 class NotificationEntity extends Equatable {
@@ -13,6 +13,7 @@ class NotificationEntity extends Equatable {
     this.reviewId,
     this.movieTitle,
     this.text,
+    this.roomId,
     required this.createdAt,
     this.read = false,
   });
@@ -29,6 +30,9 @@ class NotificationEntity extends Equatable {
 
   /// Trecho do comentário.
   final String? text;
+
+  /// Sala de Match do convite.
+  final String? roomId;
   final DateTime createdAt;
   final bool read;
 
@@ -42,6 +46,7 @@ class NotificationEntity extends Equatable {
         reviewId,
         movieTitle,
         text,
+        roomId,
         createdAt,
         read,
       ];

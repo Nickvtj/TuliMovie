@@ -99,12 +99,10 @@ class CommentRepositoryImpl implements CommentRepository {
 
       await _notifications.createMany([
         for (final recipient in recipients.entries)
-          NotificationModel(
+          NotificationModel.fromActor(
             recipientId: recipient.key,
             type: recipient.value,
-            actorId: author.id,
-            actorName: author.displayName,
-            actorPhotoUrl: author.photoUrl,
+            actor: author,
             reviewId: reviewId,
             movieTitle: review?.movieTitle,
             text: snippet,

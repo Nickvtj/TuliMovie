@@ -2,14 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/presentation/widgets/widgets.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../auth/domain/entities/user_entity.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../../groups/presentation/providers/group_providers.dart';
+import '../../../social/presentation/providers/social_providers.dart';
 import '../../domain/entities/match_filters_entity.dart';
-import '../../domain/entities/match_room_entity.dart';
+import '../../domain/usecases/pick_match_candidates_use_case.dart';
 import '../providers/match_providers.dart';
 import '../widgets/match_setup_sheet.dart';
-import 'swipe_match_page.dart';
+import 'match_room_page.dart';
 
 class MatchLobbyPage extends ConsumerStatefulWidget {
   const MatchLobbyPage({super.key});
@@ -19,15 +22,14 @@ class MatchLobbyPage extends ConsumerStatefulWidget {
 }
 
 class _MatchLobbyPageState extends ConsumerState<MatchLobbyPage> {
-  final _joinController = TextEditingController();
   MatchFiltersEntity _filters = const MatchFiltersEntity();
-  String? _activeRoomId;
+  final _invitedIds = <String>{};
   bool _isCreating = false;
 
-  @override
-  void dispose() {
-    _joinController.dispose();
-    super.dispose();
+  void _toggleInvite(String userId) {
+    setState(() {
+      if (!_invitedIds.remove(userId)) _invitedIds.add(userId);
+    });
   }
 
   Future<void> _createRoom() async {
@@ -37,11 +39,10 @@ class _MatchLobbyPageState extends ConsumerState<MatchLobbyPage> {
 
     setState(() => _isCreating = true);
     try {
-      const participantIds = <String>[];
-
+      // Exclui o que o host e os convidados já viram.
       final candidates = await ref.read(pickMatchCandidatesUseCaseProvider).call(
             groupId: groupId,
-            participantIds: {user.id},
+            participantIds: {user.id, ..._invitedIds},
             filters: _filters,
           );
 
@@ -55,13 +56,16 @@ class _MatchLobbyPageState extends ConsumerState<MatchLobbyPage> {
       }
 
       final room = await ref.read(matchRoomRepositoryProvider).createRoom(
-            hostId: user.id,
-            participantIds: participantIds,
+            host: user,
+            invitedIds: _invitedIds.toList(),
             filters: _filters,
             candidates: candidates,
           );
 
-      setState(() => _activeRoomId = room.id);
+      if (!mounted) return;
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute<void>(builder: (_) => MatchRoomPage(roomId: room.id)),
+      );
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -73,33 +77,9 @@ class _MatchLobbyPageState extends ConsumerState<MatchLobbyPage> {
     }
   }
 
-  Future<void> _joinRoom() async {
-    final user = ref.read(authSessionProvider).valueOrNull;
-    if (user == null) return;
-
-    final code = _joinController.text.trim();
-    final room = await ref.read(matchRoomRepositoryProvider).findRoomByShortCode(code);
-    if (room == null) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Sala não encontrada.')),
-        );
-      }
-      return;
-    }
-
-    await ref.read(matchRoomRepositoryProvider).joinRoom(roomId: room.id, userId: user.id);
-    if (!mounted) return;
-    setState(() => _activeRoomId = room.id);
-  }
-
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(authSessionProvider).valueOrNull;
-
-    if (_activeRoomId != null) {
-      return _ActiveRoomView(roomId: _activeRoomId!);
-    }
 
     return Scaffold(
       body: SafeArea(
@@ -110,41 +90,40 @@ class _MatchLobbyPageState extends ConsumerState<MatchLobbyPage> {
               mode: TuliScreenHeaderMode.stacked,
               title: 'Sala de Match',
             ),
-          Text(
-            'Crie a sala e compartilhe o código. Você pode jogar sozinho até alguém entrar.',
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          Text('Filtros da rodada', style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: AppSpacing.sm),
-          OutlinedButton.icon(
-            onPressed: () async {
-              final updated = await MatchSetupSheet.show(context, initial: _filters);
-              if (updated != null) setState(() => _filters = updated);
-            },
-            icon: const Icon(Icons.tune),
-            label: const Text('Personalizar filtros'),
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          TuliButton(
-            label: 'Criar sala (10 filmes)',
-            expand: true,
-            isLoading: _isCreating,
-            onPressed: user == null || _isCreating ? null : _createRoom,
-          ),
-          const SizedBox(height: AppSpacing.xxl),
-          TuliInputField(
-            label: 'Entrar com código',
-            hint: 'Ex: A1B2C3',
-            controller: _joinController,
-          ),
-          const SizedBox(height: AppSpacing.md),
-          TuliButton(
-            label: 'Entrar na sala',
-            variant: TuliButtonVariant.secondary,
-            expand: true,
-            onPressed: user == null ? null : _joinRoom,
-          ),
+            Text(
+              'Escolha quem chamar. Cada pessoa recebe um convite nas notificações '
+              'e entra na sala com um toque.',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            Text('Filtros da rodada', style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: AppSpacing.sm),
+            OutlinedButton.icon(
+              onPressed: () async {
+                final updated = await MatchSetupSheet.show(context, initial: _filters);
+                if (updated != null) setState(() => _filters = updated);
+              },
+              icon: const Icon(Icons.tune),
+              label: const Text('Personalizar filtros'),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            Text('Convidar', style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: AppSpacing.sm),
+            if (user != null)
+              _InviteList(
+                userId: user.id,
+                invitedIds: _invitedIds,
+                onToggle: _toggleInvite,
+              ),
+            const SizedBox(height: AppSpacing.lg),
+            TuliButton(
+              label: _invitedIds.isEmpty
+                  ? 'Jogar sozinho (${PickMatchCandidatesUseCase.candidateCount} filmes)'
+                  : 'Criar sala e convidar ${_invitedIds.length}',
+              expand: true,
+              isLoading: _isCreating,
+              onPressed: user == null || _isCreating ? null : _createRoom,
+            ),
           ],
         ),
       ),
@@ -152,98 +131,70 @@ class _MatchLobbyPageState extends ConsumerState<MatchLobbyPage> {
   }
 }
 
-class _ActiveRoomView extends ConsumerWidget {
-  const _ActiveRoomView({required this.roomId});
+/// Pessoas que o usuário segue, marcáveis como convidadas.
+class _InviteList extends ConsumerWidget {
+  const _InviteList({
+    required this.userId,
+    required this.invitedIds,
+    required this.onToggle,
+  });
 
-  final String roomId;
+  final String userId;
+  final Set<String> invitedIds;
+  final void Function(String userId) onToggle;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final roomAsync = ref.watch(matchRoomStreamProvider(roomId));
-    final user = ref.watch(authSessionProvider).valueOrNull;
-
-    return roomAsync.when(
-      loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
-      error: (e, _) => Scaffold(body: Center(child: Text('Erro: $e'))),
-      data: (room) {
-        if (room == null) {
-          return const Scaffold(body: Center(child: Text('Sala encerrada.')));
-        }
-
-        final isHost = user?.id == room.hostId;
-
-        return Scaffold(
-          body: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.lg),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  TuliScreenHeader(
-                    mode: TuliScreenHeaderMode.stacked,
-                    title: 'Sala ${room.shortCode}',
+    return ref.watch(followingProvider(userId)).when(
+          loading: () => const TuliFeedSkeleton(itemCount: 2),
+          error: (e, _) => const Text('Não foi possível carregar quem você segue.'),
+          data: (following) {
+            if (following.isEmpty) {
+              return Text(
+                'Você ainda não segue ninguém. Siga pessoas pela lupa do Feed para convidar.',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textMuted),
+              );
+            }
+            return Column(
+              children: [
+                for (final friend in following)
+                  _InviteTile(
+                    friend: friend,
+                    selected: invitedIds.contains(friend.id),
+                    onToggle: () => onToggle(friend.id),
                   ),
-                  TuliCard(
-                  variant: TuliCardVariant.goldAccent,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Código: ${room.shortCode}',
-                          style: Theme.of(context).textTheme.titleMedium),
-                      const SizedBox(height: 6),
-                      Text('Participantes: ${room.participantIds.length}'),
-                      Text('Filmes na rodada: ${room.candidates.length}'),
-                      Text('Status: ${room.status.name}'),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                if (room.status == MatchRoomStatus.matched)
-                  TuliButton(
-                    label: 'Ver filme match',
-                    expand: true,
-                    onPressed: () {
-                      Navigator.of(context).pushReplacement(
-                        MaterialPageRoute<void>(
-                          builder: (_) => SwipeMatchPage(roomId: roomId),
-                        ),
-                      );
-                    },
-                  )
-                else if (isHost)
-                  TuliButton(
-                    label: 'Iniciar swipes',
-                    expand: true,
-                    onPressed: () async {
-                      await ref.read(matchRoomRepositoryProvider).startSwiping(roomId);
-                      if (!context.mounted) return;
-                      Navigator.of(context).pushReplacement(
-                        MaterialPageRoute<void>(
-                          builder: (_) => SwipeMatchPage(roomId: roomId),
-                        ),
-                      );
-                    },
-                  )
-                else
-                  TuliButton(
-                    label: 'Aguardando host iniciar...',
-                    expand: true,
-                    onPressed: room.status == MatchRoomStatus.swiping
-                        ? () {
-                            Navigator.of(context).pushReplacement(
-                              MaterialPageRoute<void>(
-                                builder: (_) => SwipeMatchPage(roomId: roomId),
-                              ),
-                            );
-                          }
-                        : null,
-                  ),
-                ],
-              ),
-            ),
-          ),
+              ],
+            );
+          },
         );
-      },
+  }
+}
+
+class _InviteTile extends StatelessWidget {
+  const _InviteTile({required this.friend, required this.selected, required this.onToggle});
+
+  final UserEntity friend;
+  final bool selected;
+  final VoidCallback onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      child: TuliCard(
+        variant: selected ? TuliCardVariant.goldAccent : TuliCardVariant.standard,
+        onTap: onToggle,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+        child: CheckboxListTile(
+          value: selected,
+          onChanged: (_) => onToggle(),
+          title: Text(friend.displayName),
+          subtitle: friend.hasUsername ? Text('@${friend.username}') : null,
+          secondary: TuliRingAvatar(displayName: friend.displayName, imageUrl: friend.photoUrl),
+          controlAffinity: ListTileControlAffinity.trailing,
+          activeColor: AppColors.gold,
+        ),
+      ),
     );
   }
 }
