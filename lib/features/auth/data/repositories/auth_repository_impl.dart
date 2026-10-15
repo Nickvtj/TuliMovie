@@ -32,6 +32,13 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Stream<UserEntity?> watchUserProfile(String userId) {
+    return _userFirestore
+        .watchUser(userId)
+        .map((model) => model == null ? null : UserMapper.toEntity(model));
+  }
+
+  @override
   Future<UserEntity> loginWithEmail({
     required String email,
     required String password,
@@ -56,7 +63,15 @@ class AuthRepositoryImpl implements AuthRepository {
     required String email,
     required String password,
     required String displayName,
+    required String username,
   }) async {
+    if (!await _userFirestore.isUsernameAvailable(username)) {
+      throw const AppException(
+        message: 'Esse @ já está em uso. Escolha outro.',
+        type: AppExceptionType.validation,
+      );
+    }
+
     final credential = await _authRemote.registerWithEmail(
       email: email,
       password: password,
@@ -78,7 +93,16 @@ class AuthRepositoryImpl implements AuthRepository {
     );
 
     await _userFirestore.upsertUser(model);
+    await _userFirestore.claimUsername(userId: firebaseUser.uid, username: username);
     return UserMapper.toEntity(model);
+  }
+
+  @override
+  Future<void> claimUsername({
+    required String userId,
+    required String username,
+  }) {
+    return _userFirestore.claimUsername(userId: userId, username: username);
   }
 
   @override
@@ -101,7 +125,7 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       final stored = await _userFirestore.getUser(uid);
       if (stored != null) {
-        return UserMapper.toEntity(stored);
+        return UserMapper.toEntity(stored.copyWith(email: email));
       }
 
       final bootstrap = UserModel(

@@ -382,6 +382,17 @@ class _CredentialFields extends StatelessWidget {
                 onChanged: notifier.onDisplayNameChanged,
               ),
               const SizedBox(height: 14),
+              AuthTextField(
+                label: 'Usuário',
+                hint: '@seu.usuario',
+                errorText: form.usernameError,
+                textInputAction: TextInputAction.next,
+                autofillHints: const [AutofillHints.newUsername],
+                prefixIcon:
+                    const Icon(Icons.alternate_email, color: AuthTokens.textMuted, size: 22),
+                onChanged: notifier.onUsernameChanged,
+              ),
+              const SizedBox(height: 14),
             ],
           ),
         ),

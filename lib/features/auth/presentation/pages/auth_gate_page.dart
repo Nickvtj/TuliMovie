@@ -6,6 +6,7 @@ import '../../../shell/presentation/pages/main_shell_page.dart';
 import '../services/auth_session_policy.dart';
 import '../widgets/push_permission_prompt.dart';
 import '../providers/auth_providers.dart';
+import 'choose_username_page.dart';
 import 'login_register_page.dart';
 
 /// Session gate — login ou app autenticado.
@@ -49,10 +50,37 @@ class _AuthGatePageState extends ConsumerState<AuthGatePage> {
           error: (error, _) => const LoginRegisterPage(),
           data: (user) {
             if (user == null) return const LoginRegisterPage();
-            return const PushPermissionPrompt(child: MainShellPage());
+            return _UsernameGate(userId: user.id);
           },
         );
       },
     );
+  }
+}
+
+/// Garante @username antes do shell. Durante o cadastro o @ é reservado logo
+/// após a sessão abrir, então aguarda o submit terminar antes de pedir o @.
+class _UsernameGate extends ConsumerWidget {
+  const _UsernameGate({required this.userId});
+
+  final String userId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final profile = ref.watch(userProfileProvider(userId));
+    final isSubmitting = ref.watch(authFormNotifierProvider.select((s) => s.isSubmitting));
+    const shell = PushPermissionPrompt(child: MainShellPage());
+
+    if (profile.valueOrNull?.hasUsername ?? false) return shell;
+    // Firestore indisponível: mantém o fallback offline do app.
+    if (profile.hasError) return shell;
+    if (profile.isLoading || isSubmitting) {
+      return const Scaffold(
+        body: Center(
+          child: TuliShimmerLoader(child: TuliShimmerBox(width: 120, height: 24)),
+        ),
+      );
+    }
+    return ChooseUsernamePage(userId: userId);
   }
 }

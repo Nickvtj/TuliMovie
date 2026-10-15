@@ -42,6 +42,12 @@ import '../../features/profile/domain/usecases/mark_movie_watched_use_case.dart'
 import '../../features/tools/domain/usecases/add_watchlist_item_use_case.dart';
 import '../../features/tools/domain/usecases/toggle_watchlist_item_use_case.dart';
 import '../../features/share/domain/usecases/share_review_card_use_case.dart';
+import '../../features/social/data/datasources/follow_firestore_data_source.dart';
+import '../../features/social/data/repositories/social_repository_impl.dart';
+import '../../features/social/domain/repositories/social_repository.dart';
+import '../../features/social/domain/usecases/follow_user_use_case.dart';
+import '../../features/social/domain/usecases/search_users_use_case.dart';
+import '../../features/social/domain/usecases/unfollow_user_use_case.dart';
 import '../notifications/push_notification_service.dart';
 import '../services/image_export_service.dart';
 import '../../features/movie_match/data/datasources/match_room_firestore_data_source.dart';
@@ -176,5 +182,15 @@ Future<void> configureDependencies() async {
       () => AwardsRepositoryImpl(sl<AwardsFirestoreDataSource>()),
     )
     ..registerLazySingleton(() => GetTuliAwardsUseCase(sl<ReviewRepository>()))
-    ..registerLazySingleton(() => VoteComicCategoryUseCase(sl<AwardsRepository>()));
+    ..registerLazySingleton(() => VoteComicCategoryUseCase(sl<AwardsRepository>()))
+    ..registerLazySingleton<FollowFirestoreDataSource>(FollowFirestoreDataSource.new)
+    ..registerLazySingleton<SocialRepository>(
+      () => SocialRepositoryImpl(
+        follows: sl<FollowFirestoreDataSource>(),
+        users: sl<UserFirestoreDataSource>(),
+      ),
+    )
+    ..registerLazySingleton(() => SearchUsersUseCase(sl<SocialRepository>()))
+    ..registerLazySingleton(() => FollowUserUseCase(sl<SocialRepository>()))
+    ..registerLazySingleton(() => UnfollowUserUseCase(sl<SocialRepository>()));
 }

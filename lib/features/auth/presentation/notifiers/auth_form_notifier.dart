@@ -98,6 +98,14 @@ class AuthFormNotifier extends StateNotifier<AuthFormState> {
     );
   }
 
+  void onUsernameChanged(String value) {
+    state = state.copyWith(
+      username: value,
+      usernameError: AuthValidators.username(value),
+      clearFormError: true,
+    );
+  }
+
   void togglePasswordVisibility() {
     state = state.copyWith(obscurePassword: !state.obscurePassword);
   }
@@ -120,6 +128,7 @@ class AuthFormNotifier extends StateNotifier<AuthFormState> {
           password: state.password,
           confirmPassword: state.confirmPassword,
           displayName: state.displayName,
+          username: state.username,
         );
         await _rememberMeStorage.persistSessionAfterAuth(rememberMe: true);
       } else {
@@ -152,6 +161,7 @@ class AuthFormNotifier extends StateNotifier<AuthFormState> {
           : null,
       displayNameError:
           state.isRegister ? AuthValidators.displayName(state.displayName) : null,
+      usernameError: state.isRegister ? AuthValidators.username(state.username) : null,
     );
   }
 }

@@ -5,14 +5,18 @@ class UserModel {
     required this.id,
     required this.email,
     required this.displayName,
+    this.username,
     this.photoUrl,
     this.createdAt,
     this.updatedAt,
   });
 
   final String id;
+
+  /// Só em memória (vem do Firebase Auth) — perfil público não grava e-mail.
   final String email;
   final String displayName;
+  final String? username;
   final String? photoUrl;
   final DateTime? createdAt;
   final DateTime? updatedAt;
@@ -22,6 +26,7 @@ class UserModel {
       id: json['id'] as String? ?? '',
       email: json['email'] as String? ?? '',
       displayName: json['displayName'] as String? ?? '',
+      username: json['username'] as String?,
       photoUrl: json['photoUrl'] as String?,
       createdAt: _parseDate(json['createdAt']),
       updatedAt: _parseDate(json['updatedAt']),
@@ -30,8 +35,9 @@ class UserModel {
 
   Map<String, dynamic> toJson() {
     return {
-      'email': email,
       'displayName': displayName,
+      'displayNameLower': displayName.trim().toLowerCase(),
+      if (username != null) 'username': username,
       if (photoUrl != null) 'photoUrl': photoUrl,
       if (createdAt != null) 'createdAt': Timestamp.fromDate(createdAt!),
       'updatedAt': FieldValue.serverTimestamp(),
@@ -39,14 +45,16 @@ class UserModel {
   }
 
   UserModel copyWith({
+    String? email,
     String? displayName,
     String? photoUrl,
     DateTime? updatedAt,
   }) {
     return UserModel(
       id: id,
-      email: email,
+      email: email ?? this.email,
       displayName: displayName ?? this.displayName,
+      username: username,
       photoUrl: photoUrl ?? this.photoUrl,
       createdAt: createdAt,
       updatedAt: updatedAt ?? this.updatedAt,

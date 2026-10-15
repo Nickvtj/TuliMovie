@@ -1,3 +1,5 @@
+import '../../domain/utils/username_rules.dart';
+
 abstract final class AuthValidators {
   static String? email(String? value) {
     final email = value?.trim() ?? '';
@@ -26,5 +28,9 @@ abstract final class AuthValidators {
     if (name.isEmpty) return 'Informe seu nome.';
     if (name.length < 2) return 'Mínimo de 2 caracteres.';
     return null;
+  }
+
+  static String? username(String? value) {
+    return UsernameRules.validate(UsernameRules.normalize(value ?? ''));
   }
 }

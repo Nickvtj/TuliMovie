@@ -13,6 +13,7 @@ import '../../../awards/presentation/pages/tuli_awards_page.dart';
 import '../../../feed/domain/entities/review_entity.dart';
 import '../../../movies/presentation/pages/movie_details_page.dart';
 import '../../../movies/presentation/providers/movie_providers.dart';
+import '../../../social/presentation/widgets/follow_stats_row.dart';
 import '../../domain/entities/badge_entity.dart';
 import '../../domain/entities/profile_dashboard_entity.dart';
 import '../providers/profile_providers.dart';
@@ -34,6 +35,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   Widget build(BuildContext context) {
     final dashboard = ref.watch(profileDashboardProvider);
     final user = ref.watch(authSessionProvider).valueOrNull;
+    final username =
+        user == null ? null : ref.watch(userProfileProvider(user.id)).valueOrNull?.username;
 
     return dashboard.when(
       loading: () => const Scaffold(body: Center(child: TuliFeedSkeleton(itemCount: 4))),
@@ -92,6 +95,14 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                       ),
                       const SizedBox(height: AppSpacing.md),
                       Text(data.displayName, style: Theme.of(context).textTheme.headlineSmall),
+                      if (username != null)
+                        Text(
+                          '@$username',
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodyMedium
+                              ?.copyWith(color: AppColors.textMuted),
+                        ),
                       const SizedBox(height: AppSpacing.sm),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -108,6 +119,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                               ),
                         ),
                       ),
+                      if (user != null) ...[
+                        const SizedBox(height: AppSpacing.md),
+                        FollowStatsRow(userId: user.id),
+                      ],
                     ],
                   ),
                 ),

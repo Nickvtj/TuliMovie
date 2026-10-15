@@ -13,6 +13,25 @@ service cloud.firestore {
         allow read: if signedIn();
         allow create, update, delete: if signedIn() && request.auth.uid == userId;
       }
+
+      // Quem {userId} segue — só o próprio dono altera.
+      match /following/{targetId} {
+        allow read: if signedIn();
+        allow create, delete: if signedIn() && request.auth.uid == userId && targetId != userId;
+      }
+
+      // Espelho: cada seguidor só cria/remove o próprio documento.
+      match /followers/{followerId} {
+        allow read: if signedIn();
+        allow create, delete: if signedIn() && request.auth.uid == followerId && followerId != userId;
+      }
+    }
+
+    // Reserva de @username (id do doc = username). Leitura pública para checar
+    // disponibilidade antes do cadastro; nunca muda de dono.
+    match /usernames/{username} {
+      allow get: if true;
+      allow create: if signedIn() && request.resource.data.uid == request.auth.uid;
     }
 
     match /reviews/{reviewId} {

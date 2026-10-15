@@ -10,6 +10,7 @@ import '../../../groups/presentation/pages/group_hub_page.dart';
 import '../../../groups/presentation/providers/group_providers.dart';
 import '../../../movies/presentation/pages/movie_details_page.dart';
 import '../../../share/presentation/providers/share_providers.dart';
+import '../../../social/presentation/pages/user_search_page.dart';
 import '../providers/feed_providers.dart';
 import '../providers/feed_read_providers.dart';
 import '../widgets/review_card_widget.dart';
@@ -71,6 +72,16 @@ class _FeedPageState extends ConsumerState<FeedPage> {
                   leadingStatusDot: true,
                   title: 'Feed das comunidades',
                   trailingActions: [
+                    TuliIconButtonCircle(
+                      icon: Icons.person_search_rounded,
+                      tooltip: 'Buscar pessoas',
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute<void>(builder: (_) => const UserSearchPage()),
+                        );
+                      },
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
                     TuliIconButtonCircle(
                       icon: Icons.groups_rounded,
                       tooltip: 'Turma',

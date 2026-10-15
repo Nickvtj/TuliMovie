@@ -15,10 +15,12 @@ class AuthFormState extends Equatable {
     this.password = '',
     this.confirmPassword = '',
     this.displayName = '',
+    this.username = '',
     this.emailError,
     this.passwordError,
     this.confirmPasswordError,
     this.displayNameError,
+    this.usernameError,
     this.isSubmitting = false,
     this.formError,
     this.obscurePassword = true,
@@ -32,10 +34,12 @@ class AuthFormState extends Equatable {
   final String password;
   final String confirmPassword;
   final String displayName;
+  final String username;
   final String? emailError;
   final String? passwordError;
   final String? confirmPasswordError;
   final String? displayNameError;
+  final String? usernameError;
   final bool isSubmitting;
   final String? formError;
   final bool obscurePassword;
@@ -50,11 +54,13 @@ class AuthFormState extends Equatable {
     if (step != AuthFormStep.credentials) return false;
     if (isSubmitting) return false;
     if (emailError != null || passwordError != null) return false;
-    if (isRegister && (confirmPasswordError != null || displayNameError != null)) {
+    if (isRegister &&
+        (confirmPasswordError != null || displayNameError != null || usernameError != null)) {
       return false;
     }
     if (email.trim().isEmpty || password.isEmpty) return false;
-    if (isRegister && (confirmPassword.isEmpty || displayName.trim().isEmpty)) {
+    if (isRegister &&
+        (confirmPassword.isEmpty || displayName.trim().isEmpty || username.trim().isEmpty)) {
       return false;
     }
     return true;
@@ -67,10 +73,12 @@ class AuthFormState extends Equatable {
     String? password,
     String? confirmPassword,
     String? displayName,
+    String? username,
     Object? emailError = _copyWithUnset,
     Object? passwordError = _copyWithUnset,
     Object? confirmPasswordError = _copyWithUnset,
     Object? displayNameError = _copyWithUnset,
+    Object? usernameError = _copyWithUnset,
     bool? isSubmitting,
     String? formError,
     bool clearFormError = false,
@@ -85,6 +93,7 @@ class AuthFormState extends Equatable {
       password: password ?? this.password,
       confirmPassword: confirmPassword ?? this.confirmPassword,
       displayName: displayName ?? this.displayName,
+      username: username ?? this.username,
       emailError:
           identical(emailError, _copyWithUnset) ? this.emailError : emailError as String?,
       passwordError: identical(passwordError, _copyWithUnset)
@@ -96,6 +105,9 @@ class AuthFormState extends Equatable {
       displayNameError: identical(displayNameError, _copyWithUnset)
           ? this.displayNameError
           : displayNameError as String?,
+      usernameError: identical(usernameError, _copyWithUnset)
+          ? this.usernameError
+          : usernameError as String?,
       isSubmitting: isSubmitting ?? this.isSubmitting,
       formError: clearFormError ? null : formError ?? this.formError,
       obscurePassword: obscurePassword ?? this.obscurePassword,
@@ -112,10 +124,12 @@ class AuthFormState extends Equatable {
         password,
         confirmPassword,
         displayName,
+        username,
         emailError,
         passwordError,
         confirmPasswordError,
         displayNameError,
+        usernameError,
         isSubmitting,
         formError,
         obscurePassword,

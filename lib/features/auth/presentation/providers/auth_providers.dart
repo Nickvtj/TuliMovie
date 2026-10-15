@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/di/injection.dart';
 import '../../domain/entities/user_entity.dart';
 import '../../domain/repositories/auth_repository.dart';
+import '../../domain/usecases/claim_username_use_case.dart';
 import '../../domain/usecases/login_with_email_use_case.dart';
 import '../../domain/usecases/register_use_case.dart';
 import '../../domain/usecases/sign_out_use_case.dart';
@@ -23,9 +24,18 @@ final signOutUseCaseProvider = Provider<SignOutUseCase>(
   (ref) => SignOutUseCase(ref.watch(authRepositoryProvider), sl()),
 );
 
+final claimUsernameUseCaseProvider = Provider<ClaimUsernameUseCase>(
+  (ref) => ClaimUsernameUseCase(ref.watch(authRepositoryProvider)),
+);
+
 /// Session management — stream único de sessão Firebase + perfil Firestore.
 final authSessionProvider = StreamProvider<UserEntity?>((ref) {
   return ref.watch(authRepositoryProvider).watchAuthState();
+});
+
+/// Perfil público em tempo real de qualquer usuário (inclusive o logado).
+final userProfileProvider = StreamProvider.family<UserEntity?, String>((ref, userId) {
+  return ref.watch(authRepositoryProvider).watchUserProfile(userId);
 });
 
 final authFormNotifierProvider =

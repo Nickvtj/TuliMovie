@@ -5,6 +5,7 @@ class UserEntity extends Equatable {
     required this.id,
     required this.email,
     required this.displayName,
+    this.username,
     this.photoUrl,
     this.createdAt,
     this.updatedAt,
@@ -13,9 +14,12 @@ class UserEntity extends Equatable {
   final String id;
   final String email;
   final String displayName;
+  final String? username;
   final String? photoUrl;
   final DateTime? createdAt;
   final DateTime? updatedAt;
+
+  bool get hasUsername => username != null && username!.isNotEmpty;
 
   String get initials {
     final parts =
@@ -29,5 +33,5 @@ class UserEntity extends Equatable {
   }
 
   @override
-  List<Object?> get props => [id, email, displayName, photoUrl, createdAt, updatedAt];
+  List<Object?> get props => [id, email, displayName, username, photoUrl, createdAt, updatedAt];
 }

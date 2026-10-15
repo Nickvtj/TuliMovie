@@ -318,7 +318,9 @@ class _FriendsStep extends StatelessWidget {
                 value: selected,
                 onChanged: (_) => onToggle(friend),
                 title: Text(friend.displayName),
-                subtitle: Text(friend.email, style: Theme.of(context).textTheme.bodySmall),
+                subtitle: friend.hasUsername
+                    ? Text('@${friend.username}', style: Theme.of(context).textTheme.bodySmall)
+                    : null,
                 controlAffinity: ListTileControlAffinity.leading,
                 activeColor: AppColors.gold,
               ),
