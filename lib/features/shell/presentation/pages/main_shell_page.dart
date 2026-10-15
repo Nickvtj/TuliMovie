@@ -7,7 +7,6 @@ import '../../../feed/presentation/pages/feed_page.dart';
 import '../../../feed/presentation/notifiers/feed_notifier.dart';
 import '../../../feed/presentation/providers/feed_providers.dart';
 import '../../../feed/presentation/providers/feed_read_providers.dart';
-import '../../../groups/presentation/providers/group_providers.dart';
 import '../../../movies/presentation/pages/movie_search_page.dart';
 import '../../../profile/presentation/pages/profile_page.dart';
 import '../../../tools/presentation/pages/tools_hub_page.dart';
@@ -41,7 +40,6 @@ class _MainShellPageState extends ConsumerState<MainShellPage> {
 
   @override
   Widget build(BuildContext context) {
-    ref.watch(groupBootstrapProvider);
     final hasNewFeed = ref.watch(feedHasNewReviewsProvider);
 
     ref.listen<FeedState>(feedNotifierProvider, (previous, next) {

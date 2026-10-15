@@ -14,12 +14,11 @@ void main() {
     audienceIds: const ['ana', 'bia'],
   );
 
-  test('grava autor e audiência e não grava turmas', () {
+  test('grava autor e audiência', () {
     final json = review.toJson();
 
     expect(json['authorId'], 'ana');
     expect(json['audienceIds'], ['ana', 'bia']);
-    expect(json.containsKey('groupIds'), isFalse);
   });
 
   test('lê autor e audiência de volta e expõe o autor na entidade', () {

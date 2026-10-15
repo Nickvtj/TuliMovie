@@ -26,8 +26,9 @@ class PickMatchCandidatesUseCase {
 
   static const candidateCount = 15;
 
+  /// [hostId] é dono da watchlist usada quando o filtro pede.
   Future<List<MatchCandidateEntity>> call({
-    required String groupId,
+    required String hostId,
     required Set<String> participantIds,
     required MatchFiltersEntity filters,
   }) async {
@@ -41,8 +42,8 @@ class PickMatchCandidatesUseCase {
     final picked = <MatchCandidateEntity>[];
     final random = Random();
 
-    if (filters.includeGroupWatchlist) {
-      final items = await _watchlist.watchItems(groupId: groupId).first;
+    if (filters.includeWatchlist) {
+      final items = await _watchlist.watchItems(userId: hostId).first;
       for (final item in items) {
         if (watched.contains(item.tmdbMovieId)) continue;
         picked.add(

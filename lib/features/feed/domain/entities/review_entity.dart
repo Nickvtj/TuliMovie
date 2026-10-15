@@ -16,7 +16,6 @@ class ReviewEntity extends Equatable {
     required this.createdAt,
     this.reactions = const {},
     this.containsSpoiler = false,
-    this.groupIds = const [],
     this.authorId = '',
     this.commentCount = 0,
   });
@@ -34,9 +33,12 @@ class ReviewEntity extends Equatable {
   /// emojiKey -> userIds
   final Map<String, List<String>> reactions;
   final bool containsSpoiler;
-  final List<String> groupIds;
   final String authorId;
   final int commentCount;
+
+  /// Post do próprio [userId] ou de alguém que ele segue.
+  bool isFromNetworkOf(String userId, Set<String> followingIds) =>
+      authorId == userId || followingIds.contains(authorId);
 
   bool get hasDiscordBadge => DiscordBadgeCalculator.shouldShow(participants);
 
@@ -65,7 +67,6 @@ class ReviewEntity extends Equatable {
         createdAt,
         reactions,
         containsSpoiler,
-        groupIds,
         authorId,
         commentCount,
       ];

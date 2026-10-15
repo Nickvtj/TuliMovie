@@ -36,7 +36,7 @@ class _MatchSetupSheetState extends State<MatchSetupSheet> {
     (widget.initial.releaseYearTo ?? 2026).toDouble(),
   );
   late int? _maxRuntime = widget.initial.maxRuntimeMinutes;
-  late bool _includeWatchlist = widget.initial.includeGroupWatchlist;
+  late bool _includeWatchlist = widget.initial.includeWatchlist;
 
   void _apply() {
     Navigator.pop(
@@ -47,7 +47,7 @@ class _MatchSetupSheetState extends State<MatchSetupSheet> {
         releaseYearFrom: _years.start.round(),
         releaseYearTo: _years.end.round(),
         maxRuntimeMinutes: _maxRuntime,
-        includeGroupWatchlist: _includeWatchlist,
+        includeWatchlist: _includeWatchlist,
       ),
     );
   }
@@ -132,7 +132,7 @@ class _MatchSetupSheetState extends State<MatchSetupSheet> {
               contentPadding: EdgeInsets.zero,
               value: _includeWatchlist,
               onChanged: (v) => setState(() => _includeWatchlist = v),
-              title: const Text('Incluir filmes da watchlist do grupo'),
+              title: const Text('Incluir filmes da minha watchlist'),
             ),
           ],
         ),

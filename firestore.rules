@@ -14,6 +14,11 @@ service cloud.firestore {
         allow create, update, delete: if signedIn() && request.auth.uid == userId;
       }
 
+      // Watchlist pessoal — só o dono vê e altera.
+      match /watchlist/{movieId} {
+        allow read, write: if signedIn() && request.auth.uid == userId;
+      }
+
       // Quem {userId} segue — só o próprio dono altera.
       match /following/{targetId} {
         allow read: if signedIn();
@@ -113,24 +118,6 @@ service cloud.firestore {
       match /swipes/{userId} {
         allow read: if signedIn() && isParticipant();
         allow write: if signedIn() && request.auth.uid == userId && isParticipant();
-      }
-    }
-
-    match /watchlist/shared/items/{itemId} {
-      allow read, write: if signedIn();
-    }
-
-    match /groups/{groupId} {
-      allow read: if signedIn();
-      allow create: if signedIn() && request.auth.uid == request.resource.data.createdBy;
-      allow update: if signedIn() && (
-        request.auth.uid in resource.data.memberIds ||
-        request.auth.uid in request.resource.data.memberIds
-      );
-
-      match /watchlist/shared/items/{itemId} {
-        allow read, write: if signedIn() &&
-          request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.memberIds;
       }
     }
 

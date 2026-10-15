@@ -16,12 +16,6 @@ class FeedPageSnapshot {
 }
 
 abstract interface class ReviewFirestoreDataSource {
-  Future<FeedPageSnapshot> fetchFeedPage({
-    required String groupId,
-    required int limit,
-    DocumentSnapshot<Map<String, dynamic>>? startAfter,
-  });
-
   /// Feed social: posts cuja audiência inclui [userId].
   Future<FeedPageSnapshot> fetchAudienceFeedPage({
     required String userId,
@@ -32,10 +26,6 @@ abstract interface class ReviewFirestoreDataSource {
   Future<List<ReviewModel>> fetchByAuthor(String authorId, {int limit = 30});
 
   Future<ReviewModel?> fetchById(String reviewId);
-
-  Future<void> migrateLegacyReviewsToGroup(String groupId);
-
-  Future<void> backfillGroupIdsArray(String groupId);
 
   Future<List<ReviewModel>> fetchByMovieId(int tmdbMovieId, {int limit = 20});
 
@@ -61,19 +51,6 @@ class ReviewFirestoreDataSourceImpl implements ReviewFirestoreDataSource {
 
   CollectionReference<Map<String, dynamic>> get _collection =>
       FirebaseFirestoreAccess.require(override: _firestoreOverride).collection(collectionPath);
-
-  @override
-  Future<FeedPageSnapshot> fetchFeedPage({
-    required String groupId,
-    required int limit,
-    DocumentSnapshot<Map<String, dynamic>>? startAfter,
-  }) {
-    return _fetchPage(
-      _collection.where('groupIds', arrayContains: groupId),
-      limit: limit,
-      startAfter: startAfter,
-    );
-  }
 
   @override
   Future<FeedPageSnapshot> fetchAudienceFeedPage({
@@ -173,38 +150,6 @@ class ReviewFirestoreDataSourceImpl implements ReviewFirestoreDataSource {
     return snapshot.docs
         .map((doc) => ReviewModel.fromJson({...doc.data(), 'id': doc.id}))
         .toList();
-  }
-
-  @override
-  Future<void> migrateLegacyReviewsToGroup(String groupId) async {
-    final snapshot = await _collection.where('groupId', isNull: true).limit(100).get();
-    if (snapshot.docs.isEmpty) return;
-
-    final batch = FirebaseFirestoreAccess.require(override: _firestoreOverride).batch();
-    for (final doc in snapshot.docs) {
-      batch.update(doc.reference, {
-        'groupId': groupId,
-        'groupIds': [groupId],
-      });
-    }
-    await batch.commit();
-  }
-
-  @override
-  Future<void> backfillGroupIdsArray(String groupId) async {
-    final snapshot = await _collection.where('groupId', isEqualTo: groupId).limit(100).get();
-    if (snapshot.docs.isEmpty) return;
-
-    final batch = FirebaseFirestoreAccess.require(override: _firestoreOverride).batch();
-    var writes = 0;
-    for (final doc in snapshot.docs) {
-      final data = doc.data();
-      final existing = data['groupIds'];
-      if (existing is List && existing.isNotEmpty) continue;
-      batch.update(doc.reference, {'groupIds': [groupId]});
-      writes++;
-    }
-    if (writes > 0) await batch.commit();
   }
 
   @override

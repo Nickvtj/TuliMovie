@@ -95,7 +95,7 @@ class _SwipeMatchPageState extends ConsumerState<SwipeMatchPage> {
                       child: Padding(
                         padding: const EdgeInsets.all(24),
                         child: Text(
-                          'A turma quer ver:\n${movie.title}',
+                          'Vocês querem ver:\n${movie.title}',
                           textAlign: TextAlign.center,
                           style: Theme.of(context).textTheme.headlineSmall,
                         ),

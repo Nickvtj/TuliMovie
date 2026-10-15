@@ -14,17 +14,9 @@ import '../../features/feed/domain/repositories/review_repository.dart';
 import '../../features/feed/domain/usecases/get_feed_page_use_case.dart';
 import '../../features/feed/domain/usecases/get_movie_group_reviews_use_case.dart';
 import '../../features/feed/domain/usecases/toggle_review_reaction_use_case.dart';
-import '../../features/groups/data/datasources/group_firestore_data_source.dart';
-import '../../features/groups/data/local/active_group_storage.dart';
-import '../../features/groups/data/repositories/group_repository_impl.dart';
-import '../../features/groups/domain/repositories/group_repository.dart';
-import '../../features/groups/domain/usecases/ensure_active_group_use_case.dart';
-import '../../features/reviews/data/repositories/group_members_repository_impl.dart';
 import '../../features/reviews/data/repositories/review_write_repository_impl.dart';
-import '../../features/reviews/domain/repositories/group_members_repository.dart';
 import '../../features/reviews/domain/repositories/review_write_repository.dart';
 import '../../features/reviews/domain/usecases/create_review_use_case.dart';
-import '../../features/reviews/domain/usecases/list_group_members_use_case.dart';
 import '../../features/reviews/domain/usecases/list_taggable_friends_use_case.dart';
 import '../../features/awards/data/datasources/awards_firestore_data_source.dart';
 import '../../features/awards/data/repositories/awards_repository_impl.dart';
@@ -40,7 +32,6 @@ import '../../features/profile/domain/repositories/profile_repository.dart';
 import '../../features/profile/domain/repositories/watched_movies_repository.dart';
 import '../../features/profile/domain/usecases/get_profile_dashboard_use_case.dart';
 import '../../features/profile/domain/usecases/mark_movie_watched_use_case.dart';
-import '../../features/tools/domain/usecases/add_watchlist_item_use_case.dart';
 import '../../features/tools/domain/usecases/toggle_watchlist_item_use_case.dart';
 import '../../features/share/domain/usecases/share_review_card_use_case.dart';
 import '../../features/comments/data/datasources/comment_firestore_data_source.dart';
@@ -114,32 +105,12 @@ Future<void> configureDependencies() async {
     ..registerLazySingleton(() => GetFeedPageUseCase(sl<ReviewRepository>()))
     ..registerLazySingleton(() => GetMovieGroupReviewsUseCase(sl<ReviewRepository>()))
     ..registerLazySingleton(() => ToggleReviewReactionUseCase(sl<ReviewRepository>()))
-    ..registerLazySingleton<GroupFirestoreDataSource>(GroupFirestoreDataSource.new)
-    ..registerLazySingleton<GroupRepository>(
-      () => GroupRepositoryImpl(sl<GroupFirestoreDataSource>()),
-    )
-    ..registerLazySingleton<ActiveGroupStorage>(ActiveGroupStorage.new)
-    ..registerLazySingleton(
-      () => EnsureActiveGroupUseCase(
-        groups: sl<GroupRepository>(),
-        storage: sl<ActiveGroupStorage>(),
-        reviews: sl<ReviewFirestoreDataSource>(),
-        watchlist: sl<WatchlistFirestoreDataSource>(),
-      ),
-    )
-    ..registerLazySingleton<GroupMembersRepository>(
-      () => GroupMembersRepositoryImpl(
-        sl<GroupFirestoreDataSource>(),
-        sl<UserFirestoreDataSource>(),
-      ),
-    )
     ..registerLazySingleton<ReviewWriteRepository>(
       () => ReviewWriteRepositoryImpl(
         sl<ReviewFirestoreDataSource>(),
         sl<FollowFirestoreDataSource>(),
       ),
     )
-    ..registerLazySingleton(() => ListGroupMembersUseCase(sl<GroupMembersRepository>()))
     ..registerLazySingleton(() => CreateReviewUseCase(sl<ReviewWriteRepository>()))
     ..registerLazySingleton<MatchRoomFirestoreDataSource>(
       MatchRoomFirestoreDataSource.new,
@@ -160,7 +131,6 @@ Future<void> configureDependencies() async {
     ..registerLazySingleton<WatchlistFirestoreDataSource>(
       WatchlistFirestoreDataSource.new,
     )
-    ..registerLazySingleton(() => AddWatchlistItemUseCase(sl<WatchlistFirestoreDataSource>()))
     ..registerLazySingleton(() => ToggleWatchlistItemUseCase(sl<WatchlistFirestoreDataSource>()))
     ..registerLazySingleton(
       () => PickMatchCandidatesUseCase(

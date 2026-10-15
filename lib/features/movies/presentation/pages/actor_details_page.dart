@@ -85,7 +85,7 @@ class ActorDetailsPage extends ConsumerWidget {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Text(
-                  'Assistidos pela turma',
+                  'Assistidos por quem você segue',
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
               ),
@@ -96,12 +96,13 @@ class ActorDetailsPage extends ConsumerWidget {
                   loading: () => const TuliFeedSkeleton(itemCount: 2),
                   error: (_, __) => const TuliEmptyState(
                     message:
-                        'Não foi possível carregar as avaliações da turma.\nTente novamente em instantes.',
+                        'Não foi possível carregar as avaliações.\nTente novamente em instantes.',
                   ),
                   data: (reviews) {
                     if (reviews.isEmpty) {
                       return TuliEmptyState(
-                        message: 'A turma ainda não avaliou outros filmes com ${person.name}.',
+                        message:
+                            'Ninguém que você segue avaliou filmes com ${person.name} ainda.',
                       );
                     }
 

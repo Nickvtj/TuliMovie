@@ -11,15 +11,12 @@ import '../../../../core/presentation/widgets/widgets.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
-import '../../../groups/presentation/providers/group_providers.dart';
 import '../../../movies/domain/constants/tmdb_genres.dart';
 import '../../../movies/domain/entities/movie_entity.dart';
 import '../../../movies/presentation/pages/movie_details_page.dart';
 import '../../../profile/presentation/providers/profile_providers.dart';
-import '../../../groups/presentation/pages/group_hub_page.dart';
 import '../../../tools/presentation/pages/watchlist_page.dart';
 import '../../../tools/presentation/providers/tools_providers.dart';
-import '../../../tools/presentation/widgets/watchlist_group_picker_sheet.dart';
 import '../providers/discover_providers.dart';
 import '../widgets/discover_chips_bar_widget.dart';
 import '../widgets/discover_filter_bottom_sheet.dart';
@@ -120,44 +117,24 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
   }
 
   Future<void> _onToggleWatchlist(MovieEntity movie) async {
-    final groups = ref.read(userGroupsProvider).valueOrNull ?? [];
-    if (groups.isEmpty) {
-      _showSnack('Entre em uma turma em Minha turma para usar a watchlist.');
-      return;
-    }
-
-    final before = ref.read(watchlistGroupsForMovieProvider(movie.id));
+    final user = ref.read(authSessionProvider).valueOrNull;
+    if (user == null) return;
 
     try {
-      final after = await WatchlistGroupPickerSheet.show(
-        context,
-        groups: groups,
-        title: 'Watchlist por turma',
-        initialSelectedIds: before,
-        applyLabel: 'Salvar',
-      );
-      if (after == null || !mounted) return;
-
-      final toggle = ref.read(toggleWatchlistItemUseCaseProvider);
-      for (final group in groups) {
-        final was = before.contains(group.id);
-        final now = after.contains(group.id);
-        if (was == now) continue;
-        await toggle.call(
-          groupId: group.id,
-          tmdbMovieId: movie.id,
-          title: movie.title,
-          posterPath: movie.posterPath,
-          isCurrentlyInList: was,
-        );
-      }
+      final added = await ref.read(toggleWatchlistItemUseCaseProvider).call(
+            userId: user.id,
+            tmdbMovieId: movie.id,
+            title: movie.title,
+            posterPath: movie.posterPath,
+            isCurrentlyInList: ref.read(watchlistMovieIdsProvider).contains(movie.id),
+          );
 
       if (!mounted) return;
-      if (after.isEmpty) {
-        _showSnack('${movie.title} removido das watchlists selecionadas.');
+      if (!added) {
+        _showSnack('${movie.title} removido da sua watchlist.');
       } else {
         _showSnack(
-          '${movie.title} atualizado na watchlist.',
+          '${movie.title} salvo na sua watchlist.',
           action: SnackBarAction(
             label: 'Ver lista',
             onPressed: () {
@@ -245,18 +222,7 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
               SliverToBoxAdapter(
                 child: TuliSectionHeader(
                   title: 'Descubra',
-                  subtitle: 'Ideias frescas para a próxima sessão da turma',
-                  trailingActions: [
-                    TuliIconButtonCircle(
-                      icon: Icons.groups_rounded,
-                      tooltip: 'Turma',
-                      onPressed: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute<void>(builder: (_) => const GroupHubPage()),
-                        );
-                      },
-                    ),
-                  ],
+                  subtitle: 'Ideias frescas para a sua próxima sessão',
                   bookmarkCount: watchlistCount,
                   onBookmarkTap: () {
                     Navigator.of(context).push(

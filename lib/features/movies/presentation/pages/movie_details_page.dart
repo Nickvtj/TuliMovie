@@ -181,7 +181,7 @@ class MovieDetailsPage extends ConsumerWidget {
                       ),
                       const SizedBox(height: 22),
                       Text(
-                        'Avaliações do Nosso Grupo',
+                        'Avaliações de quem você segue',
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                       const SizedBox(height: 10),
@@ -191,7 +191,7 @@ class MovieDetailsPage extends ConsumerWidget {
                         data: (reviews) {
                           if (reviews.isEmpty) {
                             return Text(
-                              'A turma ainda não avaliou este filme.',
+                              'Ninguém que você segue avaliou este filme ainda.',
                               style: Theme.of(context).textTheme.bodyMedium,
                             );
                           }

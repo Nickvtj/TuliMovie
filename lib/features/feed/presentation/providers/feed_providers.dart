@@ -31,10 +31,10 @@ final feedNotifierProvider = StateNotifierProvider<FeedNotifier, FeedState>((ref
   final notifier = FeedNotifier(
     userId: userId,
     isVisible: (review) {
-      if (userId == null || review.authorId == userId) return true;
+      if (userId == null) return true;
       // Enquanto a lista de quem sigo carrega, não esconde nada.
       final followingIds = ref.read(followingIdsProvider(userId)).valueOrNull;
-      return followingIds == null || followingIds.contains(review.authorId);
+      return followingIds == null || review.isFromNetworkOf(userId, followingIds);
     },
     getFeedPage: ref.watch(getFeedPageUseCaseProvider),
     toggleReaction: ref.watch(toggleReviewReactionUseCaseProvider),
@@ -54,10 +54,19 @@ final feedNotifierProvider = StateNotifierProvider<FeedNotifier, FeedState>((ref
   return notifier;
 });
 
+/// Avaliações do filme feitas por você ou por quem você segue.
 final movieGroupReviewsProvider = FutureProvider.family<List<ReviewEntity>, int>((ref, movieId) async {
-  final useCase = ref.watch(getMovieGroupReviewsUseCaseProvider);
-  return useCase.byMovie(movieId);
+  final reviews = await ref.watch(getMovieGroupReviewsUseCaseProvider).byMovie(movieId);
+  return filterToMyNetwork(ref, reviews);
 });
+
+/// Mantém só posts do usuário logado e de quem ele segue.
+Future<List<ReviewEntity>> filterToMyNetwork(Ref ref, List<ReviewEntity> reviews) async {
+  final userId = ref.watch(authSessionProvider.select((s) => s.valueOrNull?.id));
+  if (userId == null) return const [];
+  final followingIds = await ref.watch(followingIdsProvider(userId).future);
+  return reviews.where((review) => review.isFromNetworkOf(userId, followingIds)).toList();
+}
 
 final reviewByIdProvider =
     FutureProvider.autoDispose.family<ReviewEntity?, String>((ref, reviewId) {

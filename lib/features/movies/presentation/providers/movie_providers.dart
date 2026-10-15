@@ -40,7 +40,8 @@ final actorGroupReviewsProvider =
     final filmography = await ref.watch(personFilmographyProvider(personId).future);
     final ids = filmography.allMovies.map((movie) => movie.id).toList();
     if (ids.isEmpty) return const [];
-    return ref.read(getMovieGroupReviewsUseCaseProvider).byMovies(ids);
+    final reviews = await ref.read(getMovieGroupReviewsUseCaseProvider).byMovies(ids);
+    return filterToMyNetwork(ref, reviews);
   } catch (_) {
     return const [];
   }

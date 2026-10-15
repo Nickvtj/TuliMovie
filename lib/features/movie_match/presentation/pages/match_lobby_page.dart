@@ -6,7 +6,6 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../auth/domain/entities/user_entity.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
-import '../../../groups/presentation/providers/group_providers.dart';
 import '../../../social/presentation/providers/social_providers.dart';
 import '../../domain/entities/match_filters_entity.dart';
 import '../../domain/usecases/pick_match_candidates_use_case.dart';
@@ -34,14 +33,13 @@ class _MatchLobbyPageState extends ConsumerState<MatchLobbyPage> {
 
   Future<void> _createRoom() async {
     final user = ref.read(authSessionProvider).valueOrNull;
-    final groupId = ref.read(activeGroupIdProvider);
-    if (user == null || groupId == null) return;
+    if (user == null) return;
 
     setState(() => _isCreating = true);
     try {
       // Exclui o que o host e os convidados já viram.
       final candidates = await ref.read(pickMatchCandidatesUseCaseProvider).call(
-            groupId: groupId,
+            hostId: user.id,
             participantIds: {user.id, ..._invitedIds},
             filters: _filters,
           );

@@ -136,7 +136,7 @@ class MatchRoomModel {
       genreIds: genreIds,
       releaseYearFrom: (map['releaseYearFrom'] as num?)?.toInt(),
       releaseYearTo: (map['releaseYearTo'] as num?)?.toInt(),
-      includeGroupWatchlist: map['includeGroupWatchlist'] == true,
+      includeWatchlist: map['includeWatchlist'] == true,
     );
   }
 
@@ -149,7 +149,7 @@ class MatchRoomModel {
       if (filters.genreIds.isNotEmpty) 'genreIds': filters.genreIds,
       if (filters.releaseYearFrom != null) 'releaseYearFrom': filters.releaseYearFrom,
       if (filters.releaseYearTo != null) 'releaseYearTo': filters.releaseYearTo,
-      if (filters.includeGroupWatchlist) 'includeGroupWatchlist': true,
+      if (filters.includeWatchlist) 'includeWatchlist': true,
     };
   }
 }

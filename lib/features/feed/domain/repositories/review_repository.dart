@@ -18,12 +18,6 @@ class FeedPageResult {
 }
 
 abstract interface class ReviewRepository {
-  Future<FeedPageResult> fetchFeedPage({
-    required String groupId,
-    required int limit,
-    FeedCursor? cursor,
-  });
-
   /// Feed social: posts cuja audiência inclui [userId].
   Future<FeedPageResult> fetchAudienceFeedPage({
     required String userId,
@@ -31,7 +25,7 @@ abstract interface class ReviewRepository {
     FeedCursor? cursor,
   });
 
-  Future<List<ReviewEntity>> getReviewsByAuthor(String authorId);
+  Future<List<ReviewEntity>> getReviewsByAuthor(String authorId, {int limit = 30});
 
   Future<ReviewEntity?> getReviewById(String reviewId);
 

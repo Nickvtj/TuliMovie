@@ -6,15 +6,15 @@ import '../../domain/repositories/profile_repository.dart';
 class ProfileRepositoryImpl implements ProfileRepository {
   ProfileRepositoryImpl(this._reviews);
 
+  /// Teto de avaliações lidas para montar o perfil.
+  static const reviewsLimit = 400;
+
   final ReviewFirestoreDataSource _reviews;
 
+  /// Avaliações publicadas pelo próprio usuário.
   @override
   Future<List<ReviewEntity>> fetchReviewsForUser(String userId) async {
-    final models = await _reviews.fetchRecentReviews(limit: 400);
-    final entities = ReviewMapper.toEntityList(models);
-
-    return entities
-        .where((review) => review.participants.any((p) => p.userId == userId))
-        .toList();
+    final models = await _reviews.fetchByAuthor(userId, limit: reviewsLimit);
+    return ReviewMapper.toEntityList(models);
   }
 }

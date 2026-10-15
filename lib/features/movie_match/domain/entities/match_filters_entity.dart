@@ -9,7 +9,7 @@ class MatchFiltersEntity extends Equatable {
     this.genreIds = const [],
     this.releaseYearFrom,
     this.releaseYearTo,
-    this.includeGroupWatchlist = false,
+    this.includeWatchlist = false,
   });
 
   /// Legado (sala antiga no Firestore).
@@ -18,7 +18,8 @@ class MatchFiltersEntity extends Equatable {
   final List<int> genreIds;
   final int? releaseYearFrom;
   final int? releaseYearTo;
-  final bool includeGroupWatchlist;
+  /// Inclui filmes da watchlist pessoal do host.
+  final bool includeWatchlist;
 
   int? get withWatchProviderId =>
       withWatchProviderIds.isEmpty ? null : withWatchProviderIds.first;
@@ -46,6 +47,6 @@ class MatchFiltersEntity extends Equatable {
         genreIds,
         releaseYearFrom,
         releaseYearTo,
-        includeGroupWatchlist,
+        includeWatchlist,
       ];
 }

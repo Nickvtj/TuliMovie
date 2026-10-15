@@ -17,7 +17,7 @@ class GetDiscoverCarouselsUseCase {
 
   Future<List<DiscoverSectionEntity>> call(
     DiscoverFilterEntity filters, {
-    required String groupId,
+    required String userId,
   }) async {
     if (!filters.usesMixedFeed) {
       final page = await _movies.discoverMoviesQuery(filters.toDiscoverQuery(page: 1));
@@ -33,7 +33,7 @@ class GetDiscoverCarouselsUseCase {
       ];
     }
 
-    final groupSection = await _groupWatchingSection(groupId);
+    final followingSection = await _followingWatchingSection(userId);
 
     final queries = <({String id, String title, String subtitle, DiscoverQueryEntity query})>[
       (
@@ -79,7 +79,7 @@ class GetDiscoverCarouselsUseCase {
     ];
 
     final sections = <DiscoverSectionEntity>[];
-    if (groupSection != null) sections.add(groupSection);
+    if (followingSection != null) sections.add(followingSection);
 
     for (final item in queries) {
       final page = await _movies.discoverMoviesQuery(item.query.copyWith(page: 1));
@@ -97,8 +97,8 @@ class GetDiscoverCarouselsUseCase {
     return sections;
   }
 
-  Future<DiscoverSectionEntity?> _groupWatchingSection(String groupId) async {
-    final feed = await _reviews.fetchFeedPage(groupId: groupId, limit: 30);
+  Future<DiscoverSectionEntity?> _followingWatchingSection(String userId) async {
+    final feed = await _reviews.fetchAudienceFeedPage(userId: userId, limit: 30);
     final movieIds = feed.reviews.map((r) => r.tmdbMovieId).toSet().take(10).toList();
     if (movieIds.isEmpty) return null;
 
@@ -115,8 +115,8 @@ class GetDiscoverCarouselsUseCase {
     if (movies.isEmpty) return null;
 
     return DiscoverSectionEntity(
-      id: 'group_watching',
-      title: 'O Que a Turma Andou Vendo',
+      id: 'following_watching',
+      title: 'O Que Quem Você Segue Andou Vendo',
       subtitle: 'Baseado nas avaliações recentes',
       movies: movies,
     );

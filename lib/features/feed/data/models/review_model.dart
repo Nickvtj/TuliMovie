@@ -48,8 +48,6 @@ class ReviewModel {
     this.reactions = const {},
     this.containsSpoiler = false,
     this.authorAnswers = const {},
-    this.groupId,
-    this.groupIds = const [],
     this.authorId = '',
     this.audienceIds = const [],
     this.commentCount = 0,
@@ -67,8 +65,6 @@ class ReviewModel {
   final Map<String, List<String>> reactions;
   final bool containsSpoiler;
   final Map<String, double> authorAnswers;
-  final String? groupId;
-  final List<String> groupIds;
   final String authorId;
 
   /// Quem recebe o post no feed: autor + seguidores no momento da publicação.
@@ -76,12 +72,6 @@ class ReviewModel {
 
   /// Mantido por incremento atômico ao comentar.
   final int commentCount;
-
-  List<String> get resolvedGroupIds {
-    if (groupIds.isNotEmpty) return groupIds;
-    if (groupId != null && groupId!.isNotEmpty) return [groupId!];
-    return const [];
-  }
 
   factory ReviewModel.fromJson(Map<String, dynamic> json) {
     final reactionsRaw = json['reactions'] as Map<String, dynamic>? ?? {};
@@ -110,24 +100,12 @@ class ReviewModel {
       reactions: reactions,
       containsSpoiler: json['containsSpoiler'] as bool? ?? false,
       authorAnswers: _parseAuthorAnswers(json['authorAnswers']),
-      groupId: json['groupId'] as String?,
-      groupIds: _parseGroupIds(json),
       authorId: json['authorId'] as String? ?? '',
       audienceIds: (json['audienceIds'] as List<dynamic>? ?? [])
           .map((e) => e.toString())
           .toList(),
       commentCount: (json['commentCount'] as num?)?.toInt() ?? 0,
     );
-  }
-
-  static List<String> _parseGroupIds(Map<String, dynamic> json) {
-    final raw = json['groupIds'];
-    if (raw is List) {
-      return raw.map((e) => e.toString()).where((id) => id.isNotEmpty).toList();
-    }
-    final legacy = json['groupId'] as String?;
-    if (legacy != null && legacy.isNotEmpty) return [legacy];
-    return const [];
   }
 
   ReviewModel copyWithId(String id) {
@@ -144,8 +122,6 @@ class ReviewModel {
       reactions: reactions,
       containsSpoiler: containsSpoiler,
       authorAnswers: authorAnswers,
-      groupId: groupId,
-      groupIds: groupIds,
       authorId: authorId,
       audienceIds: audienceIds,
       commentCount: commentCount,
@@ -165,8 +141,6 @@ class ReviewModel {
       'reactions': reactions,
       'containsSpoiler': containsSpoiler,
       if (authorAnswers.isNotEmpty) 'authorAnswers': authorAnswers,
-      if (resolvedGroupIds.isNotEmpty) 'groupIds': resolvedGroupIds,
-      if (resolvedGroupIds.isNotEmpty) 'groupId': resolvedGroupIds.first,
       if (authorId.isNotEmpty) 'authorId': authorId,
       if (audienceIds.isNotEmpty) 'audienceIds': audienceIds,
       'commentCount': commentCount,

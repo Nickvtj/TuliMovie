@@ -19,44 +19,18 @@ class ReviewRepositoryImpl implements ReviewRepository {
   final ReviewFirestoreDataSource _dataSource;
 
   @override
-  Future<FeedPageResult> fetchFeedPage({
-    required String groupId,
-    required int limit,
-    FeedCursor? cursor,
-  }) {
-    return _toFeedPage(
-      (startAfter) => _dataSource.fetchFeedPage(
-        groupId: groupId,
-        limit: limit,
-        startAfter: startAfter,
-      ),
-      cursor,
-    );
-  }
-
-  @override
   Future<FeedPageResult> fetchAudienceFeedPage({
     required String userId,
     required int limit,
     FeedCursor? cursor,
-  }) {
-    return _toFeedPage(
-      (startAfter) => _dataSource.fetchAudienceFeedPage(
+  }) async {
+    try {
+      final startAfter = cursor is _FirestoreFeedCursor ? cursor.document : null;
+      final page = await _dataSource.fetchAudienceFeedPage(
         userId: userId,
         limit: limit,
         startAfter: startAfter,
-      ),
-      cursor,
-    );
-  }
-
-  Future<FeedPageResult> _toFeedPage(
-    Future<FeedPageSnapshot> Function(DocumentSnapshot<Map<String, dynamic>>? startAfter) fetch,
-    FeedCursor? cursor,
-  ) async {
-    try {
-      final startAfter = cursor is _FirestoreFeedCursor ? cursor.document : null;
-      final page = await fetch(startAfter);
+      );
 
       return FeedPageResult(
         reviews: ReviewMapper.toEntityList(page.reviews),
@@ -70,9 +44,9 @@ class ReviewRepositoryImpl implements ReviewRepository {
   }
 
   @override
-  Future<List<ReviewEntity>> getReviewsByAuthor(String authorId) async {
+  Future<List<ReviewEntity>> getReviewsByAuthor(String authorId, {int limit = 30}) async {
     try {
-      final models = await _dataSource.fetchByAuthor(authorId);
+      final models = await _dataSource.fetchByAuthor(authorId, limit: limit);
       return ReviewMapper.toEntityList(models);
     } catch (e) {
       throw AppException(message: 'Erro ao carregar avaliações do perfil.', cause: e);
@@ -112,7 +86,7 @@ class ReviewRepositoryImpl implements ReviewRepository {
       }
       return ReviewMapper.toEntityList(allModels);
     } catch (e) {
-      throw AppException(message: 'Erro ao carregar avaliações da turma.', cause: e);
+      throw AppException(message: 'Erro ao carregar avaliações.', cause: e);
     }
   }
 

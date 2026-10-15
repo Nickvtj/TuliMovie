@@ -26,7 +26,7 @@ class MatchActiveFiltersBar extends StatelessWidget {
     if (filters.maxRuntimeMinutes != null) {
       chips.add('⏳ < ${filters.maxRuntimeMinutes} min');
     }
-    if (filters.includeGroupWatchlist) chips.add('📋 Watchlist');
+    if (filters.includeWatchlist) chips.add('📋 Watchlist');
 
     if (chips.isEmpty) return const SizedBox.shrink();
 

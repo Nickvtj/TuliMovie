@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../../../../core/presentation/widgets/widgets.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_theme.dart';
-import '../../../groups/presentation/pages/group_hub_page.dart';
 import '../../../movie_match/presentation/pages/match_lobby_page.dart';
 import 'watchlist_page.dart';
 
@@ -17,25 +16,14 @@ class ToolsHubPage extends StatelessWidget {
         child: ListView(
           padding: const EdgeInsets.only(bottom: AppSpacing.xxl),
           children: [
-            TuliSectionHeader(
+            const TuliSectionHeader(
               title: 'Dinâmicas',
-              subtitle: 'Watchlist do grupo e match para decidir o filme da turma',
-              trailingActions: [
-                TuliIconButtonCircle(
-                  icon: Icons.groups_rounded,
-                  tooltip: 'Turma',
-                  onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute<void>(builder: (_) => const GroupHubPage()),
-                    );
-                  },
-                ),
-              ],
+              subtitle: 'Sua watchlist e o match para decidir o filme com os amigos',
             ),
             _ToolCard(
               icon: Icons.bookmark_outline,
-              title: 'Watchlist do grupo',
-              description: 'Filmes salvos para assistir juntos — com roleta integrada.',
+              title: 'Minha watchlist',
+              description: 'Filmes que você quer ver — com roleta integrada.',
               actionLabel: 'Abrir lista',
               onAction: (context) {
                 Navigator.of(context).push(
@@ -46,9 +34,8 @@ class ToolsHubPage extends StatelessWidget {
             _ToolCard(
               icon: Icons.favorite_border,
               title: 'Sala Match',
-              description:
-                  'Crie a sala, compartilhe o código com a turma ou jogue sozinho até alguém entrar.',
-              actionLabel: 'Criar / entrar na sala',
+              description: 'Crie a sala e convide quem você segue — ou jogue sozinho.',
+              actionLabel: 'Criar sala',
               onAction: (context) {
                 Navigator.of(context).push(
                   MaterialPageRoute<void>(builder: (_) => const MatchLobbyPage()),

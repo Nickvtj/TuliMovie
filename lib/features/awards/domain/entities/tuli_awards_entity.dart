@@ -12,11 +12,31 @@ class AwardsTopMovieEntity extends Equatable {
   final int tmdbMovieId;
   final String title;
   final String? posterPath;
+
+  /// Nota do usuário (média se avaliou o mesmo filme mais de uma vez).
   final double averageRating;
   final int reviewCount;
 
   @override
   List<Object?> get props => [tmdbMovieId, title, posterPath, averageRating, reviewCount];
+}
+
+/// Amigo marcado como "assistiu com" nas avaliações do ano.
+class AwardsCompanionEntity extends Equatable {
+  const AwardsCompanionEntity({
+    required this.userId,
+    required this.displayName,
+    this.photoUrl,
+    required this.sessionCount,
+  });
+
+  final String userId;
+  final String displayName;
+  final String? photoUrl;
+  final int sessionCount;
+
+  @override
+  List<Object?> get props => [userId, displayName, photoUrl, sessionCount];
 }
 
 class ComicCategoryEntity extends Equatable {
@@ -34,13 +54,15 @@ class ComicCategoryEntity extends Equatable {
   List<Object?> get props => [id, title, subtitle];
 }
 
+/// Retrospectiva pessoal do ano.
 class TuliAwardsEntity extends Equatable {
   const TuliAwardsEntity({
     required this.year,
     required this.totalMovies,
     required this.totalHoursEstimate,
     required this.topMovies,
-    required this.hardestCriticName,
+    this.averageRating,
+    required this.companions,
     required this.categories,
   });
 
@@ -48,7 +70,12 @@ class TuliAwardsEntity extends Equatable {
   final int totalMovies;
   final double totalHoursEstimate;
   final List<AwardsTopMovieEntity> topMovies;
-  final String hardestCriticName;
+
+  /// Média das notas do usuário no ano; `null` sem avaliações.
+  final double? averageRating;
+
+  /// Quem mais assistiu com o usuário, do maior para o menor.
+  final List<AwardsCompanionEntity> companions;
   final List<ComicCategoryEntity> categories;
 
   @override
@@ -57,7 +84,8 @@ class TuliAwardsEntity extends Equatable {
         totalMovies,
         totalHoursEstimate,
         topMovies,
-        hardestCriticName,
+        averageRating,
+        companions,
         categories,
       ];
 }

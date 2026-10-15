@@ -5,6 +5,7 @@ import '../../../../core/presentation/widgets/widgets.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_gradients.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
+import '../../../social/presentation/pages/user_profile_page.dart';
 import '../../domain/entities/tuli_awards_entity.dart';
 import '../providers/awards_providers.dart';
 
@@ -80,7 +81,7 @@ class _TuliAwardsPageState extends ConsumerState<TuliAwardsPage> {
             Text('Tuli Awards', style: textTheme.displaySmall?.copyWith(color: AppColors.gold)),
             Text('${awards.year}', style: textTheme.headlineMedium),
             const SizedBox(height: 12),
-            const Text('Retrospectiva da turma · deslize'),
+            const Text('Sua retrospectiva · deslize'),
           ],
         ),
       ),
@@ -90,10 +91,12 @@ class _TuliAwardsPageState extends ConsumerState<TuliAwardsPage> {
           children: [
             Text('Sessão Pipoca', style: textTheme.headlineSmall),
             const SizedBox(height: 12),
-            Text('${awards.totalMovies} filmes registrados'),
+            Text('${awards.totalMovies} filmes avaliados'),
             Text('~${awards.totalHoursEstimate.toStringAsFixed(0)} horas assistidas'),
-            const SizedBox(height: 8),
-            Text('Crítico mais difícil: ${awards.hardestCriticName}'),
+            if (awards.averageRating != null) ...[
+              const SizedBox(height: 8),
+              Text('Sua nota média: ${awards.averageRating!.toStringAsFixed(1)}★'),
+            ],
           ],
         ),
       ),
@@ -101,7 +104,7 @@ class _TuliAwardsPageState extends ConsumerState<TuliAwardsPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Top 5 da Galera', style: textTheme.headlineSmall),
+            Text('Seu Top 5', style: textTheme.headlineSmall),
             const SizedBox(height: 12),
             ...awards.topMovies.map(
               (movie) => Padding(
@@ -121,10 +124,57 @@ class _TuliAwardsPageState extends ConsumerState<TuliAwardsPage> {
           ],
         ),
       ),
+      _StorySlide(child: _CompanionsSlide(companions: awards.companions)),
       _StorySlide(
         child: _ComicVotingSlide(year: awards.year, categories: awards.categories),
       ),
     ];
+  }
+}
+
+/// Ranking de quem mais foi marcado como "assistiu com" — toque abre o perfil.
+class _CompanionsSlide extends StatelessWidget {
+  const _CompanionsSlide({required this.companions});
+
+  final List<AwardsCompanionEntity> companions;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Quem mais assistiu com você', style: textTheme.headlineSmall),
+        const SizedBox(height: 12),
+        if (companions.isEmpty)
+          const Text('Marque amigos ao avaliar para aparecerem aqui.')
+        else
+          for (final (index, companion) in companions.indexed)
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: TuliRingAvatar(
+                displayName: companion.displayName,
+                imageUrl: companion.photoUrl,
+                size: 40,
+              ),
+              title: Text('${index + 1}. ${companion.displayName}'),
+              subtitle: Text(
+                companion.sessionCount == 1
+                    ? '1 sessão juntos'
+                    : '${companion.sessionCount} sessões juntos',
+              ),
+              trailing: const Icon(Icons.chevron_right_rounded, color: AppColors.textMuted),
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => UserProfilePage(userId: companion.userId),
+                  ),
+                );
+              },
+            ),
+      ],
+    );
   }
 }
 

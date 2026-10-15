@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/di/injection.dart';
-import '../../../groups/presentation/providers/group_providers.dart';
+import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../domain/entities/tuli_awards_entity.dart';
 import '../../domain/repositories/awards_repository.dart';
 import '../../domain/usecases/get_tuli_awards_use_case.dart';
@@ -19,12 +19,12 @@ final voteComicCategoryUseCaseProvider = Provider(
   (ref) => VoteComicCategoryUseCase(ref.watch(awardsRepositoryProvider)),
 );
 
-final tuliAwardsProvider = FutureProvider.family<TuliAwardsEntity, int>((ref, year) {
-  final groupId = ref.watch(activeGroupIdProvider);
-  if (groupId == null) {
-    throw StateError('Turma ativa não definida.');
+final tuliAwardsProvider = FutureProvider.autoDispose.family<TuliAwardsEntity, int>((ref, year) {
+  final userId = ref.watch(authSessionProvider.select((s) => s.valueOrNull?.id));
+  if (userId == null) {
+    throw StateError('Usuário não autenticado.');
   }
-  return ref.watch(getTuliAwardsUseCaseProvider).call(year: year, groupId: groupId);
+  return ref.watch(getTuliAwardsUseCaseProvider).call(year: year, userId: userId);
 });
 
 final comicVotesProvider = FutureProvider.family<Map<String, String>, int>((ref, year) {
