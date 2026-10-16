@@ -1,7 +1,7 @@
 {
   "name": "TuliMovie",
   "short_name": "TuliMovie",
-  "description": "Cinema social da turma — avaliações, feed e dinâmicas.",
+  "description": "Cinema social entre amigos — avaliações, feed e match.",
   "start_url": ".",
   "scope": ".",
   "display": "standalone",
