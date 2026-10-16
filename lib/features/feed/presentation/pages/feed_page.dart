@@ -60,34 +60,35 @@ class _FeedPageState extends ConsumerState<FeedPage> {
           controller: _scrollController,
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
-            SliverToBoxAdapter(
-              child: SafeArea(
-                bottom: false,
-                child: TuliScreenHeader(
-                  mode: TuliScreenHeaderMode.root,
-                  leadingStatusDot: true,
-                  title: 'Feed',
-                  subtitle: 'Você e quem você segue',
-                  trailingActions: [
-                    const _NotificationsButton(),
-                    const SizedBox(width: AppSpacing.sm),
-                    TuliIconButtonCircle(
-                      icon: Icons.person_search_rounded,
-                      tooltip: 'Buscar pessoas',
-                      onPressed: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute<void>(builder: (_) => const UserSearchPage()),
-                        );
-                      },
-                    ),
-                  ],
+            SliverAppBar(
+              floating: true,
+              snap: true,
+              toolbarHeight: 84,
+              titleSpacing: AppSpacing.lg,
+              backgroundColor: AppColors.backgroundDeep,
+              surfaceTintColor: Colors.transparent,
+              automaticallyImplyLeading: false,
+              title: const _FeedTitle(),
+              actions: [
+                const _NotificationsButton(),
+                const SizedBox(width: AppSpacing.sm),
+                TuliIconButtonCircle(
+                  icon: Icons.person_search_rounded,
+                  tooltip: 'Buscar pessoas',
+                  size: _headerActionSize,
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute<void>(builder: (_) => const UserSearchPage()),
+                    );
+                  },
                 ),
-              ),
+                const SizedBox(width: AppSpacing.lg),
+              ],
             ),
             if (feed.isInitialLoading)
               const SliverToBoxAdapter(
                 child: Padding(
-                  padding: EdgeInsets.all(20),
+                  padding: EdgeInsets.all(AppSpacing.lg),
                   child: TuliFeedSkeleton(itemCount: 4),
                 ),
               )
@@ -102,10 +103,15 @@ class _FeedPageState extends ConsumerState<FeedPage> {
               )
             else
               SliverPadding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.lg,
+                  AppSpacing.xs,
+                  AppSpacing.lg,
+                  AppSpacing.xxl,
+                ),
                 sliver: SliverList.separated(
                   itemCount: feed.reviews.length + (feed.isLoadingMore ? 1 : 0),
-                  separatorBuilder: (_, __) => const SizedBox(height: 14),
+                  separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.md),
                   itemBuilder: (context, index) {
                     if (index >= feed.reviews.length) {
                       return const Padding(
@@ -117,6 +123,7 @@ class _FeedPageState extends ConsumerState<FeedPage> {
                     final review = feed.reviews[index];
                     return ReviewCardWidget(
                       review: review,
+                      onCommentsClosed: ref.read(feedNotifierProvider.notifier).refresh,
                       onShare: () async {
                         try {
                           await ref.read(shareReviewCardUseCaseProvider).call(review);
@@ -155,6 +162,37 @@ class _FeedPageState extends ConsumerState<FeedPage> {
   }
 }
 
+/// Botões do topo do Feed — um pouco menores que o padrão para a barra compacta.
+const _headerActionSize = 38.0;
+
+class _FeedTitle extends StatelessWidget {
+  const _FeedTitle();
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Row(
+          children: [
+            const TuliStatusDot(),
+            const SizedBox(width: AppSpacing.sm),
+            Text('Feed', style: textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        Text(
+          'Você e quem você segue',
+          style: textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
+        ),
+      ],
+    );
+  }
+}
+
 /// Sino com contador de notificações não lidas.
 class _NotificationsButton extends ConsumerWidget {
   const _NotificationsButton();
@@ -168,6 +206,7 @@ class _NotificationsButton extends ConsumerWidget {
     return TuliIconButtonCircle(
       icon: Icons.notifications_none_rounded,
       tooltip: 'Notificações',
+      size: _headerActionSize,
       onPressed: () {
         Navigator.of(context).push(
           MaterialPageRoute<void>(builder: (_) => const NotificationsPage()),

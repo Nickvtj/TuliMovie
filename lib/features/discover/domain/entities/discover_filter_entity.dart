@@ -22,12 +22,15 @@ class DiscoverFilterEntity extends Equatable {
   final double? minVoteAverage;
   final int? runtimeLteMinutes;
 
-  bool get hasAdvancedFilters =>
-      withWatchProviderIds.isNotEmpty ||
-      releaseYearFrom != null ||
-      releaseYearTo != null ||
-      minVoteAverage != null ||
-      runtimeLteMinutes != null;
+  /// Quantos grupos de filtro avançado estão ativos (streaming, época, nota, duração).
+  int get activeAdvancedFilterCount => [
+        withWatchProviderIds.isNotEmpty,
+        releaseYearFrom != null || releaseYearTo != null,
+        minVoteAverage != null,
+        runtimeLteMinutes != null,
+      ].where((active) => active).length;
+
+  bool get hasAdvancedFilters => activeAdvancedFilterCount > 0;
 
   bool get usesMixedFeed => primaryGenreId == null && !hasAdvancedFilters;
 

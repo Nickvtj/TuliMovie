@@ -8,6 +8,8 @@ import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../../feed/presentation/providers/feed_providers.dart';
 import '../../../feed/presentation/widgets/review_card_widget.dart';
 import '../../../movies/presentation/pages/movie_details_page.dart';
+import '../../../profile/presentation/widgets/favorite_actors_row.dart';
+import '../../../profile/presentation/widgets/favorite_movies_row.dart';
 import '../providers/social_providers.dart';
 import '../widgets/follow_button.dart';
 import '../widgets/follow_stats_row.dart';
@@ -70,10 +72,33 @@ class UserProfilePage extends ConsumerWidget {
                         const SizedBox(height: AppSpacing.sm),
                         MutualBadge(status: status),
                       ],
+                      if (user.hasBio) ...[
+                        const SizedBox(height: AppSpacing.md),
+                        Text(
+                          user.bio!,
+                          textAlign: TextAlign.center,
+                          style: textTheme.bodyMedium?.copyWith(
+                            color: AppColors.textSecondary,
+                            height: 1.4,
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: AppSpacing.lg),
                       FollowStatsRow(userId: userId),
                       const SizedBox(height: AppSpacing.lg),
                       FollowButton(targetId: userId),
+                      if (user.favoriteMovies.isNotEmpty) ...[
+                        const SizedBox(height: AppSpacing.xl),
+                        const TuliSectionTitle(title: 'Top 4 filmes'),
+                        const SizedBox(height: AppSpacing.sm),
+                        FavoriteMoviesRow(movies: user.favoriteMovies),
+                      ],
+                      if (user.favoriteActors.isNotEmpty) ...[
+                        const SizedBox(height: AppSpacing.xl),
+                        const TuliSectionTitle(title: 'Top 4 atores'),
+                        const SizedBox(height: AppSpacing.sm),
+                        FavoriteActorsRow(actors: user.favoriteActors),
+                      ],
                     ],
                   ),
                 ),

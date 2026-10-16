@@ -26,9 +26,7 @@ class GetProfileDashboardUseCase {
       }
     }
 
-    final avg = ratings.isEmpty
-        ? 3.0
-        : ratings.reduce((a, b) => a + b) / ratings.length;
+    final avg = ratings.isEmpty ? 3.0 : ratings.reduce((a, b) => a + b) / ratings.length;
 
     return ProfileDashboardEntity(
       displayName: user.displayName,

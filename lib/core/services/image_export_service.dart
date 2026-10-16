@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:screenshot/screenshot.dart';
 
+import '../theme/app_theme.dart';
+
 /// Renderiza widgets off-screen e exporta PNG sem piscar na UI visível.
 class ImageExportService {
   ImageExportService({ScreenshotController? controller})
@@ -15,12 +17,17 @@ class ImageExportService {
   static const Size storyCanvasSize = Size(360, 640); // proporção 9:16
 
   Future<Uint8List> captureWidget(Widget widget, {double pixelRatio = 3}) async {
+    // Fora da árvore do app não há Theme: sem isto o Flutter usa o tema claro
+    // padrão e os textos saem escuros sobre o fundo escuro.
     return _controller.captureFromWidget(
       MediaQuery(
         data: const MediaQueryData(),
-        child: Material(
-          color: Colors.transparent,
-          child: widget,
+        child: Theme(
+          data: AppTheme.dark,
+          child: Material(
+            color: Colors.transparent,
+            child: widget,
+          ),
         ),
       ),
       pixelRatio: pixelRatio,

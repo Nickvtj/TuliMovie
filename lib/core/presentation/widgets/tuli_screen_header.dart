@@ -48,8 +48,8 @@ class TuliScreenHeader extends StatelessWidget {
         AppSpacing.sm,
         AppSpacing.section,
       ),
+      // Centralizado: o título fica na altura da seta de voltar e dos botões.
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (mode == TuliScreenHeaderMode.stacked && showBackButton) ...[
             TuliIconButtonCircle(
@@ -68,7 +68,7 @@ class TuliScreenHeader extends StatelessWidget {
               children: [
                 Text(title, style: titleStyle),
                 if (subtitle != null) ...[
-                  const SizedBox(height: 6),
+                  const SizedBox(height: AppSpacing.xs),
                   Text(
                     subtitle!,
                     style: textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),

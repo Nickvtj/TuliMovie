@@ -1,3 +1,5 @@
+import '../entities/favorite_actor_entity.dart';
+import '../entities/favorite_movie_entity.dart';
 import '../entities/user_entity.dart';
 
 abstract interface class AuthRepository {
@@ -23,6 +25,16 @@ abstract interface class AuthRepository {
   Future<void> claimUsername({
     required String userId,
     required String username,
+  });
+
+  /// Atualiza só os campos informados do perfil público.
+  Future<void> updateProfile({
+    required String userId,
+    String? displayName,
+    String? bio,
+    String? photoUrl,
+    List<FavoriteMovieEntity>? favoriteMovies,
+    List<FavoriteActorEntity>? favoriteActors,
   });
 
   Future<void> signOut();

@@ -4,8 +4,7 @@ import '../../../../core/config/firebase_firestore_access.dart';
 import '../../domain/entities/watched_movie_entity.dart';
 
 class WatchedMoviesFirestoreDataSource {
-  WatchedMoviesFirestoreDataSource({FirebaseFirestore? firestore})
-      : _firestoreOverride = firestore;
+  WatchedMoviesFirestoreDataSource({FirebaseFirestore? firestore}) : _firestoreOverride = firestore;
 
   final FirebaseFirestore? _firestoreOverride;
 
@@ -41,10 +40,8 @@ class WatchedMoviesFirestoreDataSource {
   }
 
   Future<List<WatchedMovieEntity>> fetchWatched(String userId, {int limit = 200}) async {
-    final snapshot = await _collection(userId)
-        .orderBy('watchedAt', descending: true)
-        .limit(limit)
-        .get();
+    final snapshot =
+        await _collection(userId).orderBy('watchedAt', descending: true).limit(limit).get();
 
     return snapshot.docs.map((doc) {
       final data = doc.data();

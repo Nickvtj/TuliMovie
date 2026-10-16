@@ -22,19 +22,19 @@ class ReviewShareCardWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
     final quote = (highlightQuote ?? review.comment ?? '').trim();
     final posterUrl = TmdbImageUrl.poster(review.moviePosterPath, size: 'w780');
-    final year = review.movieReleaseYear != null ? ' (${review.movieReleaseYear})' : '';
+    final author = review.participants.isNotEmpty ? review.participants.first : null;
+    final rating = author?.rating ?? review.groupAverageRating;
 
     return SizedBox(
       width: ImageExportService.storyCanvasSize.width,
       height: ImageExportService.storyCanvasSize.height,
       child: DecoratedBox(
-        decoration: const BoxDecoration(
-          gradient: AppGradients.backgroundVignette,
-        ),
+        decoration: const BoxDecoration(gradient: AppGradients.backgroundVignette),
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 28, 20, 22),
+          padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -42,16 +42,16 @@ class ReviewShareCardWidget extends StatelessWidget {
                 children: [
                   Text(
                     'TuliMovie',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: AppColors.gold,
-                          fontWeight: FontWeight.w800,
-                        ),
+                    style: textTheme.titleMedium?.copyWith(
+                      color: AppColors.gold,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                   const Spacer(),
                   if (review.hasDiscordBadge) const DiscordBadge(compact: true),
                 ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 20),
               Expanded(
                 child: ClipRRect(
                   borderRadius: AppShape.borderRadiusLg,
@@ -64,71 +64,82 @@ class ReviewShareCardWidget extends StatelessWidget {
                         ),
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 20),
               Text(
-                '${review.movieTitle}$year',
+                review.movieTitle,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.headlineSmall,
+                style: textTheme.headlineSmall?.copyWith(
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.w800,
+                  height: 1.15,
+                ),
               ),
-              const SizedBox(height: 10),
+              if (review.movieReleaseYear != null) ...[
+                const SizedBox(height: 4),
+                Text(
+                  '${review.movieReleaseYear}',
+                  style: textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
+                ),
+              ],
+              const SizedBox(height: 14),
               Row(
                 children: [
-                  TuliRatingStars(
-                    value: review.groupAverageRating,
-                    readOnly: true,
-                    starSize: 22,
-                  ),
-                  const SizedBox(width: 8),
+                  TuliRatingStars(value: rating, readOnly: true, starSize: 22),
+                  const SizedBox(width: 10),
                   Text(
-                    '${review.groupAverageRating.toStringAsFixed(1)} · Galera',
-                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                          color: AppColors.gold,
-                        ),
+                    rating.toStringAsFixed(1),
+                    style: textTheme.titleMedium?.copyWith(
+                      color: AppColors.gold,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
-              UserAvatarGroup(
-                imageUrls: review.participants.map((p) => p.photoUrl).toList(),
-                initials: review.participants.map((p) => _initials(p.displayName)).toList(),
-                size: 34,
-                maxVisible: 6,
-              ),
               if (quote.isNotEmpty) ...[
-                const SizedBox(height: 14),
+                const SizedBox(height: 16),
                 Text(
                   '“$quote”',
                   maxLines: 3,
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        fontStyle: FontStyle.italic,
-                        color: AppColors.textSecondary,
-                      ),
+                  style: textTheme.bodyLarge?.copyWith(
+                    fontStyle: FontStyle.italic,
+                    color: AppColors.textSecondary,
+                    height: 1.35,
+                  ),
                 ),
               ],
-              const Spacer(),
-              Text(
-                'A comunidade de cinema da turma',
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: AppColors.textMuted,
+              if (author != null) ...[
+                const SizedBox(height: 18),
+                Row(
+                  children: [
+                    TuliRingAvatar(
+                      displayName: author.displayName,
+                      imageUrl: author.photoUrl,
+                      size: 32,
                     ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'Avaliado por ${author.displayName}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: textTheme.labelLarge?.copyWith(color: AppColors.textPrimary),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+              const SizedBox(height: 18),
+              Text(
+                'tulimovie · cinema entre amigos',
+                textAlign: TextAlign.center,
+                style: textTheme.labelSmall?.copyWith(color: AppColors.textMuted),
               ),
             ],
           ),
         ),
       ),
     );
-  }
-
-  static String _initials(String name) {
-    final parts = name.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
-    if (parts.isEmpty) return '?';
-    if (parts.length == 1) {
-      final token = parts.first;
-      return (token.length >= 2 ? token.substring(0, 2) : token).toUpperCase();
-    }
-    return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
   }
 }

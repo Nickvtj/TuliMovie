@@ -9,6 +9,9 @@ abstract final class UserMapper {
       displayName: model.displayName,
       username: model.username,
       photoUrl: model.photoUrl,
+      bio: model.bio,
+      favoriteMovies: model.favoriteMovies,
+      favoriteActors: model.favoriteActors,
       createdAt: model.createdAt,
       updatedAt: model.updatedAt,
     );
@@ -21,6 +24,9 @@ abstract final class UserMapper {
       displayName: entity.displayName,
       username: entity.username,
       photoUrl: entity.photoUrl,
+      bio: entity.bio,
+      favoriteMovies: entity.favoriteMovies,
+      favoriteActors: entity.favoriteActors,
       createdAt: entity.createdAt,
       updatedAt: entity.updatedAt,
     );

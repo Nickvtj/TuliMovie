@@ -7,7 +7,7 @@ import 'tuli_meta_row.dart';
 import 'tuli_poster_image.dart';
 import 'tuli_score_pill.dart';
 
-/// Linha padrão filme (poster + metadados) — busca/descubra.
+/// Linha padrão de filme (poster + metadados + sinopse) — resultados de busca.
 class TuliMovieListTile extends StatelessWidget {
   const TuliMovieListTile({
     super.key,
@@ -16,93 +16,111 @@ class TuliMovieListTile extends StatelessWidget {
     this.year,
     this.genreLabel,
     this.voteAverage,
-    this.runtimeLabel,
+    this.overview,
     this.isUpcoming = false,
     this.onTap,
-    this.onWantToWatch,
-    this.trailing,
   });
+
+  static const _posterWidth = 76.0;
+  static const _synopsisMaxLines = 3;
 
   final String title;
   final String? posterPath;
   final String? year;
   final String? genreLabel;
   final double? voteAverage;
-  final String? runtimeLabel;
+  final String? overview;
   final bool isUpcoming;
   final VoidCallback? onTap;
-  final VoidCallback? onWantToWatch;
-  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
-    final titleStyle = textTheme.titleMedium?.copyWith(
-      fontWeight: FontWeight.w700,
-      color: isUpcoming ? AppColors.gold : AppColors.textPrimary,
-    );
+    final synopsis = overview?.trim() ?? '';
+    final hasScore = voteAverage != null && voteAverage! > 0;
 
     return TuliCard(
       onTap: onTap,
       padding: const EdgeInsets.all(AppSpacing.md),
-      child: Column(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              TuliPosterImage(posterPath: posterPath, width: 56),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: Column(
+          SizedBox(
+            width: _posterWidth,
+            height: _posterWidth * 1.5,
+            child: TuliPosterImage(posterPath: posterPath, expand: true),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (genreLabel != null && genreLabel!.isNotEmpty)
-                      Text(
-                        genreLabel!.toUpperCase(),
-                        style: textTheme.labelSmall?.copyWith(
-                          color: AppColors.gold,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.6,
-                        ),
+                    Expanded(
+                      child: Text(
+                        title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
                       ),
-                    Text(
-                      title,
-                      style: titleStyle,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 4),
-                    TuliMetaRow(
-                      year: year,
-                      extra: runtimeLabel,
-                    ),
-                    if (isUpcoming) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        'Anunciado • Em produção',
-                        style: textTheme.bodySmall?.copyWith(color: AppColors.textMuted),
-                      ),
+                    if (hasScore) ...[
+                      const SizedBox(width: AppSpacing.sm),
+                      TuliScorePill(score: voteAverage!, compact: true),
                     ],
                   ],
                 ),
-              ),
-              if (voteAverage != null && voteAverage! > 0)
-                TuliScorePill(score: voteAverage!, compact: true),
-              if (trailing != null) trailing!,
-            ],
-          ),
-          if (isUpcoming && onWantToWatch != null) ...[
-            const SizedBox(height: AppSpacing.md),
-            Align(
-              alignment: Alignment.centerRight,
-              child: TextButton(
-                onPressed: onWantToWatch,
-                child: const Text('Quero Assistir'),
-              ),
+                const SizedBox(height: AppSpacing.xs),
+                Wrap(
+                  spacing: AppSpacing.sm,
+                  runSpacing: AppSpacing.xs,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    TuliMetaRow(year: year, genreLabel: genreLabel),
+                    if (isUpcoming) const _UpcomingTag(),
+                  ],
+                ),
+                if (synopsis.isNotEmpty) ...[
+                  const SizedBox(height: AppSpacing.sm),
+                  Text(
+                    synopsis,
+                    maxLines: _synopsisMaxLines,
+                    overflow: TextOverflow.ellipsis,
+                    style: textTheme.bodySmall?.copyWith(
+                      color: AppColors.textSecondary,
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+              ],
             ),
-          ],
+          ),
         ],
+      ),
+    );
+  }
+}
+
+class _UpcomingTag extends StatelessWidget {
+  const _UpcomingTag();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: AppColors.gold.withValues(alpha: 0.12),
+        borderRadius: AppShape.borderRadiusPill,
+        border: Border.all(color: AppColors.gold.withValues(alpha: 0.4)),
+      ),
+      child: Text(
+        'Em breve',
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: AppColors.gold,
+              fontWeight: FontWeight.w600,
+            ),
       ),
     );
   }

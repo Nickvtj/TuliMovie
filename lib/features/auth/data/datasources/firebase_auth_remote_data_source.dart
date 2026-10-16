@@ -23,8 +23,7 @@ abstract interface class FirebaseAuthRemoteDataSource {
 }
 
 class FirebaseAuthRemoteDataSourceImpl implements FirebaseAuthRemoteDataSource {
-  FirebaseAuthRemoteDataSourceImpl({FirebaseAuth? firebaseAuth})
-      : _authOverride = firebaseAuth;
+  FirebaseAuthRemoteDataSourceImpl({FirebaseAuth? firebaseAuth}) : _authOverride = firebaseAuth;
 
   final FirebaseAuth? _authOverride;
 
@@ -35,8 +34,7 @@ class FirebaseAuthRemoteDataSourceImpl implements FirebaseAuthRemoteDataSource {
   }
 
   AppException get _firebaseNotConfigured => const AppException(
-        message:
-            'Firebase não configurado. Rode: flutterfire configure',
+        message: 'Firebase não configurado. Rode: flutterfire configure',
         type: AppExceptionType.unknown,
       );
 
@@ -110,10 +108,9 @@ class FirebaseAuthRemoteDataSourceImpl implements FirebaseAuthRemoteDataSource {
       'weak-password' => 'Senha muito fraca (mínimo 6 caracteres).',
       'too-many-requests' => 'Muitas tentativas. Aguarde um momento.',
       'network-request-failed' => 'Sem conexão. Verifique a internet.',
-      'configuration-not-found' =>
-        'Authentication ainda não foi ativado no projeto. Abra: '
-            'console.firebase.google.com/project/tulimovie/authentication → '
-            'Começar → Sign-in method → E-mail/senha → Ativar.',
+      'configuration-not-found' => 'Authentication ainda não foi ativado no projeto. Abra: '
+          'console.firebase.google.com/project/tulimovie/authentication → '
+          'Começar → Sign-in method → E-mail/senha → Ativar.',
       'operation-not-allowed' =>
         'Cadastro por e-mail desativado. No Console Firebase: Authentication → '
             'Sign-in method → E-mail/senha → Ativar.',

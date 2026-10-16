@@ -32,8 +32,7 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
   static const _pageSize = 20;
   static const _snackDuration = Duration(seconds: 3);
 
-  final PagingController<int, MovieEntity> _pagingController =
-      PagingController(firstPageKey: 1);
+  final PagingController<int, MovieEntity> _pagingController = PagingController(firstPageKey: 1);
 
   @override
   void initState() {
@@ -57,6 +56,8 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
         duration: _snackDuration,
         behavior: SnackBarBehavior.floating,
         action: action,
+        // Com ação, o Flutter mantém o aviso fixo por padrão; aqui ele some sozinho.
+        persist: false,
       ),
     );
   }
@@ -158,37 +159,34 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
     final filters = ref.read(discoverFiltersProvider);
     final useCase = ref.read(getDiscoverMoviesUseCaseProvider);
     final page = Random().nextInt(5) + 1;
-    final result = await useCase(userId: user.id, filters: filters, page: page);
-    if (result.movies.isEmpty || !mounted) return;
+    final MovieEntity movie;
+    try {
+      final result = await useCase(userId: user.id, filters: filters, page: page);
+      if (result.movies.isEmpty) {
+        if (mounted) _showSnack('Nenhum filme encontrado com esses filtros.');
+        return;
+      }
+      movie = result.movies[Random().nextInt(result.movies.length)];
+    } catch (_) {
+      if (mounted) _showSnack('Não foi possível girar a sorte agora.');
+      return;
+    }
+    if (!mounted) return;
 
-    final movie = result.movies[Random().nextInt(result.movies.length)];
-    await showDialog<void>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Girar a sorte'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TuliPosterImage(posterPath: movie.posterPath, width: 120),
-            const SizedBox(height: 12),
-            Text(movie.title, textAlign: TextAlign.center),
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Fechar')),
-          FilledButton(
-            onPressed: () {
-              Navigator.pop(context);
-              Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => MovieDetailsPage(movieId: movie.id),
-                ),
-              );
-            },
-            child: const Text('Ver detalhes'),
-          ),
-        ],
-      ),
+    final releaseDate = movie.releaseDate;
+    await TuliPickResultSheet.show(
+      context,
+      title: movie.title,
+      posterPath: movie.posterPath,
+      year: releaseDate != null && releaseDate.length >= 4 ? releaseDate.substring(0, 4) : null,
+      voteAverage: movie.voteAverage,
+      overview: movie.overview,
+      onOpenDetails: () {
+        Navigator.of(context).push(
+          MaterialPageRoute<void>(builder: (_) => MovieDetailsPage(movieId: movie.id)),
+        );
+      },
+      onSpinAgain: _spinLuck,
     );
   }
 
@@ -220,16 +218,15 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
           child: CustomScrollView(
             slivers: [
               SliverToBoxAdapter(
-                child: TuliSectionHeader(
-                  title: 'Descubra',
-                  subtitle: 'Ideias frescas para a sua próxima sessão',
-                  bookmarkCount: watchlistCount,
-                  onBookmarkTap: () {
+                child: _DiscoverHeader(
+                  watchlistCount: watchlistCount,
+                  activeFilterCount: filters.activeAdvancedFilterCount,
+                  onOpenWatchlist: () {
                     Navigator.of(context).push(
                       MaterialPageRoute<void>(builder: (_) => const WatchlistPage()),
                     );
                   },
-                  onFilterTap: () async {
+                  onOpenFilters: () async {
                     final updated = await DiscoverFilterBottomSheet.show(
                       context,
                       initial: filters,
@@ -238,11 +235,15 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
                       ref.read(discoverFiltersProvider.notifier).state = updated;
                     }
                   },
+                  onClearFilters: () {
+                    ref.read(discoverFiltersProvider.notifier).state =
+                        filters.copyWith(clearAdvanced: true);
+                  },
                 ),
               ),
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.only(bottom: AppSpacing.lg),
+                  padding: const EdgeInsets.only(top: AppSpacing.md, bottom: AppSpacing.lg),
                   child: DiscoverChipsBarWidget(
                     selectedGenreId: filters.primaryGenreId,
                     onGenreSelected: (genreId) {
@@ -269,7 +270,8 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
                   pagingController: _pagingController,
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
-                    childAspectRatio: 0.52,
+                    // Pôster 2:3 + título + metadados + ações "Quero ver / Já vi".
+                    childAspectRatio: 0.44,
                     crossAxisSpacing: 12,
                     mainAxisSpacing: 12,
                   ),
@@ -318,6 +320,142 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
                 ),
               ),
               const SliverToBoxAdapter(child: SizedBox(height: 96)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Título + atalhos "Quero ver" (watchlist) e "Filtros" com contadores.
+class _DiscoverHeader extends StatelessWidget {
+  const _DiscoverHeader({
+    required this.watchlistCount,
+    required this.activeFilterCount,
+    required this.onOpenWatchlist,
+    required this.onOpenFilters,
+    required this.onClearFilters,
+  });
+
+  final int watchlistCount;
+  final int activeFilterCount;
+  final VoidCallback onOpenWatchlist;
+  final VoidCallback onOpenFilters;
+  final VoidCallback onClearFilters;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const TuliScreenHeader(
+          title: 'Descubra',
+          subtitle: 'Ideias frescas para a sua próxima sessão',
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: _HeaderAction(
+                      icon: Icons.bookmark_rounded,
+                      label: 'Quero ver',
+                      count: watchlistCount,
+                      onTap: onOpenWatchlist,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: _HeaderAction(
+                      icon: Icons.tune_rounded,
+                      label: 'Filtros',
+                      count: activeFilterCount,
+                      highlighted: activeFilterCount > 0,
+                      onTap: onOpenFilters,
+                    ),
+                  ),
+                ],
+              ),
+              if (activeFilterCount > 0)
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton.icon(
+                    onPressed: onClearFilters,
+                    icon: const Icon(Icons.close_rounded, size: 16),
+                    label: const Text('Limpar filtros'),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _HeaderAction extends StatelessWidget {
+  const _HeaderAction({
+    required this.icon,
+    required this.label,
+    required this.count,
+    required this.onTap,
+    this.highlighted = false,
+  });
+
+  final IconData icon;
+  final String label;
+  final int count;
+  final VoidCallback onTap;
+  final bool highlighted;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return Material(
+      color: highlighted ? AppColors.gold.withValues(alpha: 0.12) : AppColors.surfaceElevated,
+      shape: RoundedRectangleBorder(
+        borderRadius: AppShape.borderRadiusMd,
+        side: BorderSide(
+          color: highlighted ? AppColors.gold.withValues(alpha: 0.5) : AppColors.borderSubtle,
+        ),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: AppShape.borderRadiusMd,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.md),
+          child: Row(
+            children: [
+              Icon(icon, size: 20, color: AppColors.gold),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Text(
+                  label,
+                  style: textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600),
+                ),
+              ),
+              if (count > 0)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: AppColors.gold,
+                    borderRadius: AppShape.borderRadiusPill,
+                  ),
+                  child: Text(
+                    '$count',
+                    style: textTheme.labelSmall?.copyWith(
+                      color: AppColors.backgroundDeep,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                )
+              else
+                const Icon(Icons.chevron_right_rounded, size: 20, color: AppColors.textMuted),
             ],
           ),
         ),

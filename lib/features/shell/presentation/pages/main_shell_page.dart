@@ -9,7 +9,7 @@ import '../../../feed/presentation/providers/feed_providers.dart';
 import '../../../feed/presentation/providers/feed_read_providers.dart';
 import '../../../movies/presentation/pages/movie_search_page.dart';
 import '../../../profile/presentation/pages/profile_page.dart';
-import '../../../tools/presentation/pages/tools_hub_page.dart';
+import '../../../movie_match/presentation/pages/match_lobby_page.dart';
 
 class MainShellPage extends ConsumerStatefulWidget {
   const MainShellPage({super.key});
@@ -25,7 +25,7 @@ class _MainShellPageState extends ConsumerState<MainShellPage> {
     FeedPage(),
     DiscoverPage(),
     MovieSearchPage(),
-    ToolsHubPage(),
+    MatchLobbyPage(),
     ProfilePage(),
   ];
 

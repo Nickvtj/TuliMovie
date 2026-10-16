@@ -3,12 +3,35 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/presentation/widgets/widgets.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../auth/presentation/providers/auth_providers.dart';
+import '../../../discover/presentation/providers/discover_providers.dart';
 import '../../../movies/presentation/pages/movie_details_page.dart';
+import '../../domain/entities/watchlist_item_entity.dart';
 import '../providers/tools_providers.dart';
 import '../widgets/movie_roulette_widget.dart';
 
 class WatchlistPage extends ConsumerWidget {
   const WatchlistPage({super.key});
+
+  Future<void> _remove(BuildContext context, WidgetRef ref, WatchlistItemEntity item) async {
+    final userId = ref.read(authSessionProvider).valueOrNull?.id;
+    if (userId == null) return;
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await ref.read(toggleWatchlistItemUseCaseProvider).call(
+            userId: userId,
+            tmdbMovieId: item.tmdbMovieId,
+            title: item.title,
+            posterPath: item.posterPath,
+            isCurrentlyInList: true,
+          );
+      messenger.showSnackBar(SnackBar(content: Text('${item.title} removido da watchlist.')));
+    } catch (_) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Não foi possível remover. Tente novamente.')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -59,7 +82,8 @@ class WatchlistPage extends ConsumerWidget {
                     sliver: SliverGrid(
                       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: 2,
-                        childAspectRatio: 0.52,
+                        // Pôster 2:3 + título + botão "Remover".
+                        childAspectRatio: 0.48,
                         crossAxisSpacing: 12,
                         mainAxisSpacing: 12,
                       ),
@@ -70,6 +94,7 @@ class WatchlistPage extends ConsumerWidget {
                             title: item.title,
                             posterPath: item.posterPath,
                             isInWatchlist: true,
+                            onRemove: () => _remove(context, ref, item),
                             onTap: () {
                               Navigator.of(context).push(
                                 MaterialPageRoute<void>(

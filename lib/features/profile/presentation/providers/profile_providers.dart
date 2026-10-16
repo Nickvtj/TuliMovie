@@ -6,6 +6,7 @@ import '../../domain/entities/profile_dashboard_entity.dart';
 import '../../domain/repositories/profile_repository.dart';
 import '../../domain/repositories/watched_movies_repository.dart';
 import '../../domain/usecases/get_profile_dashboard_use_case.dart';
+import '../../domain/usecases/update_profile_use_case.dart';
 
 final profileRepositoryProvider = Provider<ProfileRepository>(
   (ref) => sl<ProfileRepository>(),
@@ -14,6 +15,8 @@ final profileRepositoryProvider = Provider<ProfileRepository>(
 final getProfileDashboardUseCaseProvider = Provider(
   (ref) => sl<GetProfileDashboardUseCase>(),
 );
+
+final updateProfileUseCaseProvider = Provider((ref) => sl<UpdateProfileUseCase>());
 
 final userWatchedMovieIdsProvider = FutureProvider<Set<int>>((ref) async {
   final user = ref.watch(authSessionProvider).valueOrNull;

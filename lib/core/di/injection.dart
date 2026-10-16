@@ -32,6 +32,7 @@ import '../../features/profile/domain/repositories/profile_repository.dart';
 import '../../features/profile/domain/repositories/watched_movies_repository.dart';
 import '../../features/profile/domain/usecases/get_profile_dashboard_use_case.dart';
 import '../../features/profile/domain/usecases/mark_movie_watched_use_case.dart';
+import '../../features/profile/domain/usecases/update_profile_use_case.dart';
 import '../../features/tools/domain/usecases/toggle_watchlist_item_use_case.dart';
 import '../../features/share/domain/usecases/share_review_card_use_case.dart';
 import '../../features/comments/data/datasources/comment_firestore_data_source.dart';
@@ -149,6 +150,7 @@ Future<void> configureDependencies() async {
     ..registerLazySingleton(
       () => GetProfileDashboardUseCase(sl<ProfileRepository>(), sl<WatchedMoviesRepository>()),
     )
+    ..registerLazySingleton(() => UpdateProfileUseCase(sl<AuthRepository>()))
     ..registerLazySingleton(
       () => GetDiscoverMoviesUseCase(
         movies: sl<MovieRepository>(),

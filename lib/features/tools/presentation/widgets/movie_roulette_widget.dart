@@ -7,6 +7,7 @@ import '../../../../core/presentation/widgets/widgets.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_gradients.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../movies/presentation/pages/movie_details_page.dart';
 import '../../domain/entities/watchlist_item_entity.dart';
 import '../providers/tools_providers.dart';
 
@@ -57,27 +58,17 @@ class _MovieRouletteWidgetState extends ConsumerState<MovieRouletteWidget>
   }
 
   void _showResultModal(WatchlistItemEntity item) {
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        return Padding(
-          padding: const EdgeInsets.all(16),
-          child: TuliCard(
-            variant: TuliCardVariant.goldAccent,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text('Roleta sorteou', style: Theme.of(context).textTheme.labelMedium),
-                const SizedBox(height: 8),
-                Text(item.title, style: Theme.of(context).textTheme.headlineSmall),
-                const SizedBox(height: 12),
-                TuliPosterImage(posterPath: item.posterPath, width: 100),
-              ],
-            ),
-          ),
+    final items = ref.read(watchlistItemsProvider).valueOrNull ?? const [];
+    TuliPickResultSheet.show(
+      context,
+      title: item.title,
+      posterPath: item.posterPath,
+      onOpenDetails: () {
+        Navigator.of(context).push(
+          MaterialPageRoute<void>(builder: (_) => MovieDetailsPage(movieId: item.tmdbMovieId)),
         );
       },
+      onSpinAgain: items.isEmpty ? null : () => _spin(items),
     );
   }
 

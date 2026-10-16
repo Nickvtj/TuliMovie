@@ -11,7 +11,15 @@ import '../notifiers/movie_search_notifier.dart';
 import '../providers/movie_providers.dart';
 import 'movie_details_page.dart';
 
-enum _SearchSort { relevance, year, rating }
+enum _SearchSort {
+  relevance('Relevância'),
+  year('Mais recentes'),
+  rating('Melhor nota');
+
+  const _SearchSort(this.label);
+
+  final String label;
+}
 
 class MovieSearchPage extends ConsumerStatefulWidget {
   const MovieSearchPage({super.key});
@@ -49,27 +57,6 @@ class _MovieSearchPageState extends ConsumerState<MovieSearchPage> {
     return list;
   }
 
-  String _sortLabel(_SearchSort sort) {
-    switch (sort) {
-      case _SearchSort.relevance:
-        return 'relevância';
-      case _SearchSort.year:
-        return 'ano';
-      case _SearchSort.rating:
-        return 'nota';
-    }
-  }
-
-  void _cycleSort() {
-    setState(() {
-      _sort = switch (_sort) {
-        _SearchSort.relevance => _SearchSort.year,
-        _SearchSort.year => _SearchSort.rating,
-        _SearchSort.rating => _SearchSort.relevance,
-      };
-    });
-  }
-
   bool _isUpcoming(MovieEntity movie) {
     final date = movie.releaseDate;
     if (date == null || date.length < 4) return false;
@@ -83,6 +70,8 @@ class _MovieSearchPageState extends ConsumerState<MovieSearchPage> {
     final search = ref.watch(movieSearchNotifierProvider);
     final notifier = ref.read(movieSearchNotifierProvider.notifier);
     final results = _sorted(search.results);
+    final hasResults =
+        search.query.trim().length >= 2 && !search.isLoading && search.errorMessage == null;
 
     return Scaffold(
       body: SafeArea(
@@ -91,78 +80,132 @@ class _MovieSearchPageState extends ConsumerState<MovieSearchPage> {
             const TuliScreenHeader(
               mode: TuliScreenHeaderMode.root,
               title: 'Avaliar',
+              subtitle: 'Encontre o filme que você assistiu e dê sua nota',
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.sm),
-              child: TextField(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+              child: _SearchField(
                 controller: _queryController,
                 onChanged: notifier.onQueryChanged,
-                style: Theme.of(context).textTheme.bodyLarge,
-                decoration: InputDecoration(
-                  hintText: 'Buscar filme, saga ou diretor...',
-                  prefixIcon: const Icon(Icons.search_rounded, color: AppColors.textMuted),
-                  suffixIcon: _queryController.text.isEmpty
-                      ? null
-                      : IconButton(
-                          icon: const Icon(Icons.close_rounded, color: AppColors.textMuted),
-                          onPressed: () {
-                            _queryController.clear();
-                            notifier.onQueryChanged('');
-                            setState(() {});
-                          },
-                        ),
-                  filled: true,
-                  fillColor: AppColors.surfaceElevated,
-                  border: OutlineInputBorder(
-                    borderRadius: AppShape.borderRadiusMd,
-                    borderSide: const BorderSide(color: AppColors.borderElevated),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: AppShape.borderRadiusMd,
-                    borderSide: const BorderSide(color: AppColors.borderElevated),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: AppShape.borderRadiusMd,
-                    borderSide: const BorderSide(color: AppColors.gold, width: 1.5),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(vertical: 14),
-                ),
+                onClear: () {
+                  _queryController.clear();
+                  notifier.onQueryChanged('');
+                },
               ),
             ),
             if (!EnvConfig.hasTmdbApiKey)
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.sm, AppSpacing.lg, 0),
                 child: Text(
                   'Configure TMDB_API_KEY ao iniciar (scripts/run_web.cmd).',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.gold),
                 ),
               ),
-            if (search.query.trim().length >= 2 && !search.isLoading && search.errorMessage == null)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.sm, AppSpacing.lg, AppSpacing.sm),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        'RESULTADOS (${results.length})',
-                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                              color: AppColors.textMuted,
-                              letterSpacing: 1,
-                              fontWeight: FontWeight.w700,
-                            ),
-                      ),
-                    ),
-                    TextButton.icon(
-                      onPressed: _cycleSort,
-                      icon: const Icon(Icons.swap_vert_rounded, size: 18),
-                      label: Text('Ordenado por ${_sortLabel(_sort)}'),
-                    ),
-                  ],
-                ),
+            if (hasResults && results.isNotEmpty)
+              _SortBar(
+                resultCount: results.length,
+                selected: _sort,
+                onSelected: (sort) => setState(() => _sort = sort),
               ),
+            const SizedBox(height: AppSpacing.sm),
             Expanded(child: _ResultsBody(search: search, results: results, isUpcoming: _isUpcoming)),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _SearchField extends StatelessWidget {
+  const _SearchField({
+    required this.controller,
+    required this.onChanged,
+    required this.onClear,
+  });
+
+  final TextEditingController controller;
+  final ValueChanged<String> onChanged;
+  final VoidCallback onClear;
+
+  @override
+  Widget build(BuildContext context) {
+    final border = OutlineInputBorder(
+      borderRadius: AppShape.borderRadiusPill,
+      borderSide: const BorderSide(color: AppColors.borderElevated),
+    );
+
+    return TextField(
+      controller: controller,
+      onChanged: onChanged,
+      textInputAction: TextInputAction.search,
+      style: Theme.of(context).textTheme.bodyLarge,
+      decoration: InputDecoration(
+        hintText: 'Buscar filme, saga ou diretor...',
+        prefixIcon: const Icon(Icons.search_rounded, color: AppColors.textMuted),
+        suffixIcon: controller.text.isEmpty
+            ? null
+            : IconButton(
+                tooltip: 'Limpar',
+                icon: const Icon(Icons.close_rounded, color: AppColors.textMuted),
+                onPressed: onClear,
+              ),
+        filled: true,
+        fillColor: AppColors.surfaceElevated,
+        border: border,
+        enabledBorder: border,
+        focusedBorder: border.copyWith(
+          borderSide: const BorderSide(color: AppColors.gold, width: 1.5),
+        ),
+        contentPadding: const EdgeInsets.symmetric(vertical: 14),
+      ),
+    );
+  }
+}
+
+class _SortBar extends StatelessWidget {
+  const _SortBar({
+    required this.resultCount,
+    required this.selected,
+    required this.onSelected,
+  });
+
+  final int resultCount;
+  final _SearchSort selected;
+  final ValueChanged<_SearchSort> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpacing.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+            child: Text(
+              resultCount == 1 ? '1 filme encontrado' : '$resultCount filmes encontrados',
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(color: AppColors.textMuted),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          SizedBox(
+            height: 36,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+              itemCount: _SearchSort.values.length,
+              separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.sm),
+              itemBuilder: (context, index) {
+                final sort = _SearchSort.values[index];
+                return TuliFilterChip(
+                  label: sort.label,
+                  selected: sort == selected,
+                  onSelected: () => onSelected(sort),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -183,37 +226,39 @@ class _ResultsBody extends StatelessWidget {
   Widget build(BuildContext context) {
     if (search.query.trim().length < 2) {
       return const TuliEmptyState(
-        message: 'Digite pelo menos 2 letras para buscar no catálogo',
-        icon: Icons.add_circle_outline,
+        message: 'Qual filme você viu?\nDigite pelo menos 2 letras para buscar.',
+        icon: Icons.movie_filter_outlined,
       );
     }
 
     if (search.isLoading) {
       return const Padding(
-        padding: EdgeInsets.all(16),
+        padding: EdgeInsets.all(AppSpacing.lg),
         child: TuliFeedSkeleton(itemCount: 5),
       );
     }
 
     if (search.errorMessage != null) {
-      return Center(child: Text(search.errorMessage!));
+      return TuliEmptyState(message: search.errorMessage!, icon: Icons.error_outline_rounded);
     }
 
     if (results.isEmpty) {
-      return const TuliEmptyState(message: 'Nenhum filme encontrado para essa busca.');
+      return const TuliEmptyState(
+        message: 'Nenhum filme encontrado.\nTente outro título ou o nome original.',
+        icon: Icons.search_off_rounded,
+      );
     }
 
     return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
+      padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.xs, AppSpacing.lg, 96),
       itemCount: results.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 10),
+      separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.md),
       itemBuilder: (context, index) {
         final movie = results[index];
         final year = movie.releaseDate != null && movie.releaseDate!.length >= 4
             ? movie.releaseDate!.substring(0, 4)
             : null;
         final genre = movie.genreIds.isNotEmpty ? TmdbGenres.labelFor(movie.genreIds.first) : null;
-        final upcoming = isUpcoming(movie);
 
         return TuliMovieListTile(
           title: movie.title,
@@ -221,12 +266,11 @@ class _ResultsBody extends StatelessWidget {
           year: year,
           genreLabel: genre,
           voteAverage: movie.voteAverage,
-          isUpcoming: upcoming,
+          overview: movie.overview,
+          isUpcoming: isUpcoming(movie),
           onTap: () {
             Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => MovieDetailsPage(movieId: movie.id),
-              ),
+              MaterialPageRoute<void>(builder: (_) => MovieDetailsPage(movieId: movie.id)),
             );
           },
         );

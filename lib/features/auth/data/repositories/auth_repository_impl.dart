@@ -1,7 +1,11 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../../../core/errors/app_exception.dart';
+import '../../domain/entities/favorite_actor_entity.dart';
+import '../../domain/entities/favorite_movie_entity.dart';
 import '../../domain/entities/user_entity.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../datasources/firebase_auth_remote_data_source.dart';
@@ -19,9 +23,48 @@ class AuthRepositoryImpl implements AuthRepository {
   final FirebaseAuthRemoteDataSource _authRemote;
   final UserFirestoreDataSource _userFirestore;
 
+  /// Sessão viva: a cada login resolve o perfil e passa a seguir `users/{uid}`,
+  /// então edições (nome, avatar) chegam ao app sem relogar. Troca de conta
+  /// cancela o acompanhamento anterior.
   @override
   Stream<UserEntity?> watchAuthState() {
-    return _authRemote.authStateChanges().asyncMap(_resolveUser);
+    late final StreamController<UserEntity?> controller;
+    StreamSubscription<User?>? authSubscription;
+    StreamSubscription<UserEntity?>? sessionSubscription;
+
+    controller = StreamController<UserEntity?>(
+      onListen: () {
+        authSubscription = _authRemote.authStateChanges().listen(
+          (firebaseUser) {
+            sessionSubscription?.cancel();
+            sessionSubscription = _watchSession(firebaseUser).listen(
+              controller.add,
+              onError: controller.addError,
+            );
+          },
+          onError: controller.addError,
+        );
+      },
+      onCancel: () async {
+        await sessionSubscription?.cancel();
+        await authSubscription?.cancel();
+      },
+    );
+    return controller.stream;
+  }
+
+  Stream<UserEntity?> _watchSession(User? firebaseUser) async* {
+    final resolved = await _resolveUser(firebaseUser);
+    yield resolved;
+    if (firebaseUser == null || resolved == null) return;
+
+    final email = firebaseUser.email ?? '';
+    // Falha no acompanhamento (ex.: offline) mantém a última sessão válida.
+    yield* _userFirestore
+        .watchUser(resolved.id)
+        .where((model) => model != null)
+        .map((model) => UserMapper.toEntity(model!.copyWith(email: email)))
+        .handleError((Object _) {});
   }
 
   @override
@@ -103,6 +146,27 @@ class AuthRepositoryImpl implements AuthRepository {
     required String username,
   }) {
     return _userFirestore.claimUsername(userId: userId, username: username);
+  }
+
+  @override
+  Future<void> updateProfile({
+    required String userId,
+    String? displayName,
+    String? bio,
+    String? photoUrl,
+    List<FavoriteMovieEntity>? favoriteMovies,
+    List<FavoriteActorEntity>? favoriteActors,
+  }) {
+    return _userFirestore.updateProfile(
+      userId,
+      UserModel.profileUpdateJson(
+        displayName: displayName,
+        bio: bio,
+        photoUrl: photoUrl,
+        favoriteMovies: favoriteMovies,
+        favoriteActors: favoriteActors,
+      ),
+    );
   }
 
   @override

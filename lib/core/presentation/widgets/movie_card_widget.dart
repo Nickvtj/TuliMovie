@@ -18,6 +18,7 @@ class MovieCardWidget extends StatelessWidget {
     this.onTap,
     this.onMarkWatched,
     this.onAddWatchlist,
+    this.onRemove,
     this.compact = false,
     this.titleBelowPoster = true,
     this.showGroupWatchedBadge = false,
@@ -34,6 +35,9 @@ class MovieCardWidget extends StatelessWidget {
   final VoidCallback? onTap;
   final VoidCallback? onMarkWatched;
   final VoidCallback? onAddWatchlist;
+
+  /// Remove o filme de uma lista (ex.: Minha watchlist).
+  final VoidCallback? onRemove;
   final bool compact;
   final bool titleBelowPoster;
   final bool showGroupWatchedBadge;
@@ -116,30 +120,6 @@ class MovieCardWidget extends StatelessWidget {
                       ),
                     ),
                   ),
-                if (onMarkWatched != null || onAddWatchlist != null)
-                  Positioned(
-                    bottom: 4,
-                    right: 4,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (onMarkWatched != null)
-                          _QuickAction(
-                            icon: isWatched ? Icons.visibility : Icons.visibility_outlined,
-                            tooltip: isWatched ? 'Já assistido' : 'Já vi',
-                            onPressed: onMarkWatched!,
-                            highlighted: isWatched,
-                          ),
-                        if (onAddWatchlist != null)
-                          _QuickAction(
-                            icon: isInWatchlist ? Icons.bookmark : Icons.bookmark_add_outlined,
-                            tooltip: isInWatchlist ? 'Remover da watchlist' : 'Quero ver',
-                            onPressed: onAddWatchlist!,
-                            highlighted: isInWatchlist,
-                          ),
-                      ],
-                    ),
-                  ),
               ],
             ),
           ),
@@ -154,7 +134,105 @@ class MovieCardWidget extends StatelessWidget {
             if (year != null || (genreLabel != null && genreLabel!.isNotEmpty))
               TuliMetaRow(year: year, genreLabel: genreLabel),
           ],
+          if (onAddWatchlist != null || onMarkWatched != null) ...[
+            const SizedBox(height: AppSpacing.sm),
+            Row(
+              children: [
+                if (onAddWatchlist != null)
+                  Expanded(
+                    child: _CardAction(
+                      icon: isInWatchlist ? Icons.bookmark_rounded : Icons.bookmark_add_outlined,
+                      label: isInWatchlist ? 'Salvo' : 'Quero ver',
+                      tooltip: isInWatchlist ? 'Remover da watchlist' : 'Salvar para ver depois',
+                      active: isInWatchlist,
+                      onPressed: onAddWatchlist!,
+                    ),
+                  ),
+                if (onAddWatchlist != null && onMarkWatched != null)
+                  const SizedBox(width: 6),
+                if (onMarkWatched != null)
+                  Expanded(
+                    child: _CardAction(
+                      icon: isWatched ? Icons.check_circle_rounded : Icons.visibility_outlined,
+                      label: isWatched ? 'Visto' : 'Já vi',
+                      tooltip: isWatched ? 'Já assistido' : 'Marcar como assistido',
+                      active: isWatched,
+                      onPressed: onMarkWatched!,
+                    ),
+                  ),
+              ],
+            ),
+          ],
+          if (onRemove != null) ...[
+            const SizedBox(height: AppSpacing.sm),
+            _CardAction(
+              icon: Icons.delete_outline_rounded,
+              label: 'Remover',
+              tooltip: 'Remover da lista',
+              onPressed: onRemove!,
+            ),
+          ],
         ],
+      ),
+    );
+  }
+}
+
+/// Ação rotulada abaixo do card (salvar / já vi) — dourada quando ativa.
+class _CardAction extends StatelessWidget {
+  const _CardAction({
+    required this.icon,
+    required this.label,
+    required this.tooltip,
+    required this.onPressed,
+    this.active = false,
+  });
+
+  final IconData icon;
+  final String label;
+  final String tooltip;
+  final VoidCallback onPressed;
+  final bool active;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = active ? AppColors.gold : AppColors.textSecondary;
+
+    return Tooltip(
+      message: tooltip,
+      child: Material(
+        color: active ? AppColors.gold.withValues(alpha: 0.14) : AppColors.surfaceElevated,
+        shape: RoundedRectangleBorder(
+          borderRadius: AppShape.borderRadiusPill,
+          side: BorderSide(
+            color: active ? AppColors.gold.withValues(alpha: 0.5) : AppColors.borderSubtle,
+          ),
+        ),
+        child: InkWell(
+          onTap: onPressed,
+          customBorder: const StadiumBorder(),
+          child: SizedBox(
+            height: 32,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, size: 16, color: color),
+                const SizedBox(width: 4),
+                Flexible(
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: color,
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -209,44 +287,3 @@ class _MiniBadge extends StatelessWidget {
   }
 }
 
-class _QuickAction extends StatelessWidget {
-  const _QuickAction({
-    required this.icon,
-    required this.tooltip,
-    required this.onPressed,
-    this.highlighted = false,
-  });
-
-  final IconData icon;
-  final String tooltip;
-  final VoidCallback onPressed;
-  final bool highlighted;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 4),
-      child: Material(
-        color: highlighted
-            ? AppColors.gold.withValues(alpha: 0.35)
-            : Colors.black.withValues(alpha: 0.65),
-        borderRadius: BorderRadius.circular(20),
-        child: InkWell(
-          onTap: onPressed,
-          borderRadius: BorderRadius.circular(20),
-          child: Tooltip(
-            message: tooltip,
-            child: Padding(
-              padding: const EdgeInsets.all(6),
-              child: Icon(
-                icon,
-                size: 18,
-                color: highlighted ? AppColors.gold : Colors.white,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}

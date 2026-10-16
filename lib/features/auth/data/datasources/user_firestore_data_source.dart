@@ -8,6 +8,9 @@ import '../models/user_model.dart';
 abstract interface class UserFirestoreDataSource {
   Future<void> upsertUser(UserModel user);
 
+  /// Merge parcial dos campos editáveis (ver [UserModel.profileUpdateJson]).
+  Future<void> updateProfile(String userId, Map<String, dynamic> fields);
+
   Future<UserModel?> getUser(String userId);
 
   Stream<UserModel?> watchUser(String userId);
@@ -50,6 +53,17 @@ class UserFirestoreDataSourceImpl implements UserFirestoreDataSource {
       documentId: user.id,
       data: user,
       toJson: (value) => value.toJson(),
+      merge: true,
+    );
+  }
+
+  @override
+  Future<void> updateProfile(String userId, Map<String, dynamic> fields) async {
+    await _firestore.update<Map<String, dynamic>>(
+      collectionPath: collectionPath,
+      documentId: userId,
+      data: fields,
+      toJson: (value) => value,
       merge: true,
     );
   }
@@ -167,13 +181,13 @@ class UserFirestoreDataSourceImpl implements UserFirestoreDataSource {
           });
         }
         transaction.set(
-            userRef,
-            {
-              'username': username,
-              'updatedAt': FieldValue.serverTimestamp(),
-            },
-            SetOptions(merge: true),
-          );
+          userRef,
+          {
+            'username': username,
+            'updatedAt': FieldValue.serverTimestamp(),
+          },
+          SetOptions(merge: true),
+        );
       });
     } on AppException {
       rethrow;

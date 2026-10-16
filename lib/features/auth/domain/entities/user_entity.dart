@@ -1,5 +1,8 @@
 import 'package:equatable/equatable.dart';
 
+import 'favorite_actor_entity.dart';
+import 'favorite_movie_entity.dart';
+
 class UserEntity extends Equatable {
   const UserEntity({
     required this.id,
@@ -7,6 +10,9 @@ class UserEntity extends Equatable {
     required this.displayName,
     this.username,
     this.photoUrl,
+    this.bio,
+    this.favoriteMovies = const [],
+    this.favoriteActors = const [],
     this.createdAt,
     this.updatedAt,
   });
@@ -16,14 +22,18 @@ class UserEntity extends Equatable {
   final String displayName;
   final String? username;
   final String? photoUrl;
+  final String? bio;
+  final List<FavoriteMovieEntity> favoriteMovies;
+  final List<FavoriteActorEntity> favoriteActors;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
   bool get hasUsername => username != null && username!.isNotEmpty;
 
+  bool get hasBio => bio != null && bio!.trim().isNotEmpty;
+
   String get initials {
-    final parts =
-        displayName.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
+    final parts = displayName.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
     if (parts.isEmpty) return '?';
     if (parts.length == 1) {
       final name = parts.first;
@@ -33,5 +43,16 @@ class UserEntity extends Equatable {
   }
 
   @override
-  List<Object?> get props => [id, email, displayName, username, photoUrl, createdAt, updatedAt];
+  List<Object?> get props => [
+        id,
+        email,
+        displayName,
+        username,
+        photoUrl,
+        bio,
+        favoriteMovies,
+        favoriteActors,
+        createdAt,
+        updatedAt,
+      ];
 }

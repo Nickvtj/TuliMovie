@@ -14,7 +14,7 @@ import 'spoiler_blur_text.dart';
 
 typedef ReviewCardTap = void Function(ReviewEntity review);
 
-/// Card modular do feed — cabeçalho do autor, bloco do filme e citação.
+/// Card modular do feed — autor, bloco do filme, comentário e barra de ações.
 class ReviewCardWidget extends StatelessWidget {
   const ReviewCardWidget({
     super.key,
@@ -22,6 +22,7 @@ class ReviewCardWidget extends StatelessWidget {
     this.onOpenMovie,
     this.onReact,
     this.onShare,
+    this.onCommentsClosed,
     this.compact = false,
   });
 
@@ -29,17 +30,28 @@ class ReviewCardWidget extends StatelessWidget {
   final ReviewCardTap? onOpenMovie;
   final Future<void> Function(String reactionKey)? onReact;
   final VoidCallback? onShare;
+
+  /// Chamado ao voltar dos comentários — permite atualizar contadores.
+  final VoidCallback? onCommentsClosed;
   final bool compact;
+
+  Future<void> _openComments(BuildContext context) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => ReviewCommentsPage(reviewId: review.id)),
+    );
+    onCommentsClosed?.call();
+  }
 
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     final author = review.participants.isNotEmpty ? review.participants.first : null;
     final authorRating = author?.rating ?? review.groupAverageRating;
-    final timeLabel = formatRelativeTimePt(review.createdAt);
     final watchedWith = review.participants.skip(1).toList();
+    final hasComment = review.comment != null && review.comment!.trim().isNotEmpty;
 
     return TuliCard(
+      padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, AppSpacing.xs),
       onTap: onOpenMovie == null ? null : () => onOpenMovie!(review),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -48,13 +60,23 @@ class ReviewCardWidget extends StatelessWidget {
             _AuthorHeader(
               author: author,
               authorId: review.authorId,
-              timeLabel: timeLabel,
+              timeLabel: formatRelativeTimePt(review.createdAt),
             ),
           if (watchedWith.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.sm),
-            Text(
-              'com ${watchedWith.map((p) => p.displayName).join(', ')}',
-              style: textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+            Row(
+              children: [
+                const Icon(Icons.people_alt_outlined, size: 14, color: AppColors.textMuted),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    'com ${watchedWith.map((p) => p.displayName).join(', ')}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+                  ),
+                ),
+              ],
             ),
           ],
           const SizedBox(height: AppSpacing.md),
@@ -64,45 +86,39 @@ class ReviewCardWidget extends StatelessWidget {
             compact: compact,
             textTheme: textTheme,
           ),
-          if (review.comment != null && review.comment!.trim().isNotEmpty) ...[
+          if (hasComment) ...[
             const SizedBox(height: AppSpacing.md),
             if (review.containsSpoiler)
               SpoilerBlurText(text: review.comment!, maxLines: compact ? 3 : 5)
             else
               TuliQuoteBlock(text: review.comment!, maxLines: compact ? 3 : 5),
           ],
-          const SizedBox(height: AppSpacing.md),
-          _ReactionStrip(review: review),
+          _EngagementSummary(review: review, onOpenComments: () => _openComments(context)),
+          const SizedBox(height: AppSpacing.sm),
+          const Divider(height: 1, color: AppColors.borderSubtle),
           Row(
-            mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              TextButton.icon(
-                onPressed: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) => ReviewCommentsPage(reviewId: review.id),
-                    ),
-                  );
-                },
-                icon: const Icon(Icons.chat_bubble_outline_rounded, size: 18),
-                label: Text(review.commentCount > 0 ? '${review.commentCount}' : 'Comentar'),
-              ),
-              if (onShare != null)
-                TextButton.icon(
-                  onPressed: onShare,
-                  icon: const Icon(Icons.style_outlined, size: 18),
-                  label: const Text('Card'),
-                ),
-              TextButton.icon(
+              _CardActionButton(
+                icon: Icons.add_reaction_outlined,
+                label: 'Reagir',
                 onPressed: onReact == null
                     ? null
                     : () async {
                         final key = await showQuickReactionsSheet(context);
                         if (key != null) await onReact!(key);
                       },
-                icon: const Icon(Icons.add_reaction_outlined, size: 18),
-                label: const Text('+ Reagir'),
               ),
+              _CardActionButton(
+                icon: Icons.chat_bubble_outline_rounded,
+                label: 'Comentar',
+                onPressed: () => _openComments(context),
+              ),
+              if (onShare != null)
+                _CardActionButton(
+                  icon: Icons.ios_share_rounded,
+                  label: 'Card',
+                  onPressed: onShare,
+                ),
             ],
           ),
         ],
@@ -141,7 +157,7 @@ class _AuthorHeader extends StatelessWidget {
           TuliRingAvatar(
             displayName: author.displayName,
             imageUrl: author.photoUrl,
-            size: 40,
+            size: 36,
           ),
           const SizedBox(width: AppSpacing.md),
           Expanded(
@@ -150,16 +166,18 @@ class _AuthorHeader extends StatelessWidget {
               children: [
                 Text(
                   author.displayName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
                 ),
+                const SizedBox(height: 2),
                 Text(
-                  'avaliou $timeLabel',
+                  'avaliou · $timeLabel',
                   style: textTheme.bodySmall?.copyWith(color: AppColors.textMuted),
                 ),
               ],
             ),
           ),
-          const Icon(Icons.more_vert_rounded, color: AppColors.textMuted, size: 20),
         ],
       ),
     );
@@ -184,86 +202,158 @@ class _MovieBlock extends StatelessWidget {
     final year = review.movieReleaseYear?.toString();
     final ratedCount = review.participants.where((p) => p.hasSubmittedRating).length;
 
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        TuliPosterImage(
-          posterPath: review.moviePosterPath,
-          width: compact ? 64 : 76,
-        ),
-        const SizedBox(width: AppSpacing.md),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (review.hasDiscordBadge) const DiscordBadge(compact: true),
-              Text(
-                review.movieTitle,
-                style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-              if (year != null) ...[
-                const SizedBox(height: 4),
-                TuliMetaRow(year: year),
-              ],
-              const SizedBox(height: AppSpacing.sm),
-              Row(
-                children: [
-                  TuliRatingStars(
-                    value: authorRating,
-                    readOnly: true,
-                    starSize: compact ? 16 : 18,
-                  ),
-                  const SizedBox(width: AppSpacing.sm),
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.sm),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceElevated,
+        borderRadius: AppShape.borderRadiusMd,
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          TuliPosterImage(
+            posterPath: review.moviePosterPath,
+            width: compact ? 60 : 72,
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (review.hasDiscordBadge) ...[
+                  const DiscordBadge(compact: true),
+                  const SizedBox(height: AppSpacing.xs),
+                ],
+                Text(
+                  review.movieTitle,
+                  style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                if (year != null) ...[
+                  const SizedBox(height: 2),
+                  TuliMetaRow(year: year),
+                ],
+                const SizedBox(height: AppSpacing.sm),
+                Row(
+                  children: [
+                    TuliRatingStars(
+                      value: authorRating,
+                      readOnly: true,
+                      starSize: compact ? 15 : 17,
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Text(
+                      authorRating.toStringAsFixed(1),
+                      style: textTheme.labelLarge?.copyWith(
+                        color: AppColors.gold,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+                if (ratedCount > 1) ...[
+                  const SizedBox(height: 4),
                   Text(
-                    authorRating.toStringAsFixed(1),
-                    style: textTheme.labelLarge?.copyWith(color: AppColors.gold),
+                    'Média de quem assistiu: ${review.groupAverageRating.toStringAsFixed(1)} ★',
+                    style: textTheme.bodySmall?.copyWith(color: AppColors.textMuted),
                   ),
                 ],
-              ),
-              if (ratedCount > 1) ...[
-                const SizedBox(height: 4),
-                Text(
-                  'Média de quem assistiu: ${review.groupAverageRating.toStringAsFixed(1)} ★',
-                  style: textTheme.bodySmall?.copyWith(color: AppColors.textMuted),
-                ),
               ],
-            ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
 
-class _ReactionStrip extends StatelessWidget {
-  const _ReactionStrip({required this.review});
+/// "😂😭 3 reações · 2 comentários" — oculto quando não há interação.
+class _EngagementSummary extends StatelessWidget {
+  const _EngagementSummary({required this.review, required this.onOpenComments});
 
   final ReviewEntity review;
+  final VoidCallback onOpenComments;
 
   @override
   Widget build(BuildContext context) {
-    final chips = QuickReactions.options
-        .where((option) => review.reactionCount(option.key) > 0)
-        .map((option) {
-      final count = review.reactionCount(option.key);
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: AppColors.surfaceElevated,
-          borderRadius: AppShape.borderRadiusPill,
-          border: Border.all(color: AppColors.borderSubtle),
-        ),
-        child: Text(
-          '${option.emoji} $count',
-          style: Theme.of(context).textTheme.labelSmall,
-        ),
-      );
-    }).toList();
+    final used = QuickReactions.options.where((option) => review.reactionCount(option.key) > 0);
+    final reactionTotal = used.fold<int>(0, (sum, option) => sum + review.reactionCount(option.key));
+    final comments = review.commentCount;
+    if (reactionTotal == 0 && comments == 0) return const SizedBox.shrink();
 
-    if (chips.isEmpty) return const SizedBox.shrink();
+    final style = Theme.of(context).textTheme.labelMedium?.copyWith(color: AppColors.textSecondary);
 
-    return Wrap(spacing: 8, runSpacing: 8, children: chips);
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpacing.md),
+      child: Row(
+        children: [
+          if (reactionTotal > 0) ...[
+            Text(used.map((option) => option.emoji).join(), style: style),
+            const SizedBox(width: 6),
+            Text(reactionTotal == 1 ? '1 reação' : '$reactionTotal reações', style: style),
+          ],
+          const Spacer(),
+          if (comments > 0)
+            InkWell(
+              onTap: onOpenComments,
+              borderRadius: AppShape.borderRadiusSm,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 2),
+                child: Text(
+                  comments == 1 ? '1 comentário' : '$comments comentários',
+                  style: style,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Botão da barra inferior do card — divide a largura igualmente.
+class _CardActionButton extends StatelessWidget {
+  const _CardActionButton({
+    required this.icon,
+    required this.label,
+    required this.onPressed,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = onPressed == null ? AppColors.textMuted : AppColors.textSecondary;
+
+    return Expanded(
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: AppShape.borderRadiusSm,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 20, color: color),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                        color: color,
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

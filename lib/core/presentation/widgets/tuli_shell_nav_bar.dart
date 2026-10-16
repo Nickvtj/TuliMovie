@@ -13,7 +13,7 @@ class TuliShellNavBar extends StatelessWidget {
     this.showFeedNotificationBadge = true,
   });
 
-  /// Índices: 0 Feed, 1 Descubra, 2 (FAB — não selecionável), 3 Diversão, 4 Perfil.
+  /// Índices: 0 Feed, 1 Descubra, 2 (FAB — não selecionável), 3 Match, 4 Perfil.
   final int selectedIndex;
   final ValueChanged<int> onDestinationSelected;
   final VoidCallback onPrimaryAction;
@@ -75,9 +75,9 @@ class TuliShellNavBar extends StatelessWidget {
                     ),
                     const Expanded(child: SizedBox(width: 72)),
                     _NavSlot(
-                      icon: Icons.casino_outlined,
-                      selectedIcon: Icons.casino_rounded,
-                      label: 'Dinâmicas',
+                      icon: Icons.style_outlined,
+                      selectedIcon: Icons.style_rounded,
+                      label: 'Match',
                       selected: navSelected == 2,
                       onTap: () => onDestinationSelected(_navSlotToShell(2)),
                     ),
