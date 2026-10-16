@@ -18,11 +18,82 @@
   <!-- Fundo cheio: o iOS aplica o próprio arredondamento. -->
   <link rel="apple-touch-icon" href="icons/Icon-maskable-192.png">
 
+  <!-- Abre conexão cedo com os servidores usados logo após o carregamento
+       (fontes, SDK do Firebase, banco, TMDB e pôsteres). -->
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
+  <link rel="preconnect" href="https://api.themoviedb.org" crossorigin>
+  <link rel="preconnect" href="https://image.tmdb.org" crossorigin>
+
   <title>TuliMovie</title>
   <link rel="icon" type="image/png" href="favicon.png"/>
+
+  <!-- Fundo escuro desde o primeiro instante + tela de carregamento (evita "tela branca"). -->
+  <style>
+    html, body { margin: 0; height: 100%; background: #0D0E12; }
+    #tuli-splash {
+      position: fixed; inset: 0; z-index: 9999;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px;
+      padding: 24px; box-sizing: border-box; text-align: center;
+      background: #0D0E12; color: #A0A5B1;
+      font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      transition: opacity .35s ease;
+    }
+    #tuli-splash.tuli-hidden { opacity: 0; pointer-events: none; }
+    #tuli-splash img { width: 96px; height: 96px; border-radius: 22px; }
+    #tuli-splash p { margin: 0; max-width: 320px; }
+    #tuli-splash strong { color: #FFFFFF; font-size: 17px; }
+    .tuli-spinner {
+      width: 28px; height: 28px; border-radius: 50%;
+      border: 3px solid rgba(255, 184, 0, .2); border-top-color: #FFB800;
+      animation: tuli-spin .9s linear infinite;
+    }
+    @keyframes tuli-spin { to { transform: rotate(360deg); } }
+  </style>
 </head>
 <body>
-  <script src="flutter_bootstrap.js" async></script>
+  <div id="tuli-splash">
+    <img src="icons/Icon-192.png" alt="TuliMovie">
+    <div class="tuli-spinner" id="tuli-spinner"></div>
+    <p id="tuli-splash-text">Carregando…</p>
+  </div>
+
+  <script>
+    (function () {
+      var splash = document.getElementById('tuli-splash');
+      var text = document.getElementById('tuli-splash-text');
+
+      // O motor do app precisa de WebAssembly: sem ele (Modo de Bloqueio do iOS
+      // ou iOS antigo) a tela ficaria branca para sempre. Explica e não carrega.
+      if (typeof WebAssembly === 'undefined') {
+        document.getElementById('tuli-spinner').remove();
+        text.innerHTML =
+          '<strong>Seu navegador não consegue abrir o TuliMovie.</strong><br><br>' +
+          'No iPhone, desative o <b>Modo de Bloqueio</b> para este site ' +
+          '(Ajustes › Privacidade e Segurança › Modo de Bloqueio) ou atualize o iOS. ' +
+          'Se abriu por um link do WhatsApp ou Instagram, abra no Safari.';
+        return;
+      }
+
+      // Some quando o Flutter desenha a primeira tela.
+      window.addEventListener('flutter-first-frame', function () {
+        splash.classList.add('tuli-hidden');
+        setTimeout(function () { splash.remove(); }, 400);
+      });
+
+      // Primeira visita em rede lenta: avisa que é normal demorar.
+      setTimeout(function () {
+        if (document.body.contains(splash)) {
+          text.textContent = 'Ainda carregando… na primeira vez pode levar alguns segundos.';
+        }
+      }, 8000);
+
+      // Carregador embutido (index.html não fica em cache): evita reaproveitar
+      // um flutter_bootstrap.js antigo guardado pelo navegador.
+      {{flutter_bootstrap_js}}
+    })();
+  </script>
 
   <!-- Firebase Cloud Messaging (background) — substitua pelos valores do Firebase Console -->
   <script>

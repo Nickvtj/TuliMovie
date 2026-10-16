@@ -41,7 +41,9 @@ if (-not $TmdbApiKey) {
   Write-Host "Exemplo: `$env:TMDB_API_KEY='sua_chave'; .\scripts\deploy_hosting.ps1"
 }
 
-$defines = @()
+# Motor gráfico (CanvasKit) servido pelo próprio site, não pelo CDN do Google:
+# se o gstatic for bloqueado/lento, o iPhone ficava em tela branca.
+$defines = @("--no-web-resources-cdn")
 if ($TmdbApiKey) { $defines += "--dart-define=TMDB_API_KEY=$TmdbApiKey" }
 
 Write-Host ">> flutter pub get"

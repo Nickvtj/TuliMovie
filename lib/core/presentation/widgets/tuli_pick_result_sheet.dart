@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../theme/app_colors.dart';
+import '../../theme/app_effects.dart';
 import '../../theme/app_theme.dart';
 import 'tuli_button.dart';
 import 'tuli_meta_row.dart';
@@ -110,7 +111,7 @@ class TuliPickResultSheet extends StatelessWidget {
               boxShadow: [
                 BoxShadow(
                   color: AppColors.gold.withValues(alpha: 0.25),
-                  blurRadius: 32,
+                  blurRadius: AppEffects.blur(32),
                   spreadRadius: -4,
                 ),
               ],

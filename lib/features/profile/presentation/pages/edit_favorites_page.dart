@@ -154,7 +154,9 @@ class _EditFavoritesPageState extends ConsumerState<EditFavoritesPage> {
   }
 
   String? _imageUrl(String? path) =>
-      widget.kind == FavoriteKind.movies ? TmdbImageUrl.poster(path) : TmdbImageUrl.profile(path);
+      widget.kind == FavoriteKind.movies
+          ? TmdbImageUrl.posterForWidth(path, 92)
+          : TmdbImageUrl.profile(path);
 
   @override
   Widget build(BuildContext context) {

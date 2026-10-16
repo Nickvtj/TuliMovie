@@ -1,6 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_core/firebase_core.dart';
 
+import '../../../../core/config/firebase_bootstrap.dart';
 import '../../../../core/errors/app_exception.dart';
 
 abstract interface class FirebaseAuthRemoteDataSource {
@@ -29,7 +29,7 @@ class FirebaseAuthRemoteDataSourceImpl implements FirebaseAuthRemoteDataSource {
 
   FirebaseAuth? get _auth {
     if (_authOverride != null) return _authOverride;
-    if (Firebase.apps.isEmpty) return null;
+    if (!isFirebaseReady) return null;
     return FirebaseAuth.instance;
   }
 

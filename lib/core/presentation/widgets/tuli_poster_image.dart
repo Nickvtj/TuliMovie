@@ -73,14 +73,15 @@ class _PosterBody extends StatelessWidget {
   final BorderRadius borderRadius;
   final BoxFit fit;
 
-  int? get _memCacheWidth {
+  /// Largura em pixels a decodificar (2x cobre telas retina sem exagero).
+  int get _pixelWidth {
     if (!width.isFinite || width <= 0) return 600;
     return (width * 2).clamp(1, 2048).toInt();
   }
 
   @override
   Widget build(BuildContext context) {
-    final url = TmdbImageUrl.poster(posterPath);
+    final url = TmdbImageUrl.posterForWidth(posterPath, _pixelWidth.toDouble());
 
     if (url == null) {
       return _Placeholder(width: width, height: height, borderRadius: borderRadius, expand: true);
@@ -96,7 +97,7 @@ class _PosterBody extends StatelessWidget {
           fit: fit,
           width: width.isFinite ? width : null,
           height: height.isFinite ? height : null,
-          memCacheWidth: _memCacheWidth,
+          memCacheWidth: _pixelWidth,
           placeholder: (_, __) => TuliShimmerLoader(
             child: _Placeholder(
               width: width,

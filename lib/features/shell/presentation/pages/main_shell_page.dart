@@ -21,6 +21,10 @@ class MainShellPage extends ConsumerStatefulWidget {
 class _MainShellPageState extends ConsumerState<MainShellPage> {
   int _index = 0;
 
+  /// Abas já abertas. Cada aba só é montada (e busca dados) na primeira visita,
+  /// em vez de todas carregarem juntas logo após o login.
+  final Set<int> _visited = {0};
+
   static const _pages = [
     FeedPage(),
     DiscoverPage(),
@@ -30,7 +34,10 @@ class _MainShellPageState extends ConsumerState<MainShellPage> {
   ];
 
   void _onNavSelected(int index) {
-    setState(() => _index = index);
+    setState(() {
+      _index = index;
+      _visited.add(index);
+    });
     if (index == 0) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) markFeedAsSeen(ref);
@@ -52,7 +59,10 @@ class _MainShellPageState extends ConsumerState<MainShellPage> {
     return Scaffold(
       body: IndexedStack(
         index: _index,
-        children: _pages,
+        children: [
+          for (var i = 0; i < _pages.length; i++)
+            _visited.contains(i) ? _pages[i] : const SizedBox.shrink(),
+        ],
       ),
       bottomNavigationBar: TuliShellNavBar(
         selectedIndex: _index,

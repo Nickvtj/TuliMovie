@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../theme/app_colors.dart';
+import '../../theme/app_effects.dart';
 
 class TuliStatusDot extends StatelessWidget {
   const TuliStatusDot({super.key, this.size = 10});
@@ -18,7 +19,7 @@ class TuliStatusDot extends StatelessWidget {
         boxShadow: [
           BoxShadow(
             color: AppColors.gold.withValues(alpha: 0.75),
-            blurRadius: 12,
+            blurRadius: AppEffects.blur(12),
             spreadRadius: 2,
           ),
         ],

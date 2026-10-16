@@ -20,6 +20,6 @@ abstract final class AvatarCatalog {
 
   static final List<String> urls = [
     for (final (style, seed) in _avatars)
-      '$_baseUrl/$style/png?seed=$seed&size=256&backgroundColor=$_background',
+      '$_baseUrl/$style/png?seed=$seed&size=192&backgroundColor=$_background',
   ];
 }

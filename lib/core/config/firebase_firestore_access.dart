@@ -1,13 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_core/firebase_core.dart';
-
 import '../errors/app_exception.dart';
+import 'firebase_bootstrap.dart';
 
 /// Evita `FirebaseFirestore.instance` antes de [Firebase.initializeApp] (crítico na Web).
 abstract final class FirebaseFirestoreAccess {
   static FirebaseFirestore? resolve({FirebaseFirestore? override}) {
     if (override != null) return override;
-    if (Firebase.apps.isEmpty) return null;
+    if (!isFirebaseReady) return null;
     return FirebaseFirestore.instance;
   }
 

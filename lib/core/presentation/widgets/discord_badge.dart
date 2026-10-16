@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../theme/app_colors.dart';
+import '../../theme/app_effects.dart';
 import '../../theme/app_gradients.dart';
 import '../../theme/app_theme.dart';
 
@@ -24,7 +25,13 @@ class _DiscordBadgeState extends State<DiscordBadge> with SingleTickerProviderSt
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1400),
-    )..repeat(reverse: true);
+    );
+    // No iPhone o pulso infinito obriga a tela a redesenhar sem parar: fica parado.
+    if (AppEffects.reduced) {
+      _pulse = const AlwaysStoppedAnimation<double>(1);
+      return;
+    }
+    _controller.repeat(reverse: true);
     _pulse = Tween<double>(begin: 0.92, end: 1.06).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
     );
@@ -49,7 +56,7 @@ class _DiscordBadgeState extends State<DiscordBadge> with SingleTickerProviderSt
           boxShadow: [
             BoxShadow(
               color: AppColors.neonRed.withValues(alpha: 0.45),
-              blurRadius: 14,
+              blurRadius: AppEffects.blur(14),
               spreadRadius: -2,
             ),
           ],

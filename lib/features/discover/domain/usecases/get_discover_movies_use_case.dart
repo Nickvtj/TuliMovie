@@ -15,12 +15,15 @@ class GetDiscoverMoviesUseCase {
   final MovieRepository _movies;
   final WatchedMoviesRepository _watchedMovies;
 
+  /// [watchedIds]: assistidos já carregados pela tela. Sem eles, lê do Firestore
+  /// (evita reler a coleção inteira a cada página).
   Future<DiscoverMoviesPage> call({
     required String userId,
     required DiscoverFilterEntity filters,
     required int page,
+    Set<int>? watchedIds,
   }) async {
-    final excludeIds = await _safeWatchedIds(userId);
+    final excludeIds = watchedIds ?? await _safeWatchedIds(userId);
 
     if (!filters.usesMixedFeed) {
       final query = filters.toDiscoverQuery(page: page);

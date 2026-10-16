@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/presentation/widgets/widgets.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_effects.dart';
 import '../../../../core/theme/app_gradients.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../movies/presentation/pages/movie_details_page.dart';
@@ -100,7 +101,7 @@ class _MovieRouletteWidgetState extends ConsumerState<MovieRouletteWidget>
                         boxShadow: [
                           BoxShadow(
                             color: AppColors.gold.withValues(alpha: 0.25),
-                            blurRadius: 16,
+                            blurRadius: AppEffects.blur(16),
                           ),
                         ],
                       ),

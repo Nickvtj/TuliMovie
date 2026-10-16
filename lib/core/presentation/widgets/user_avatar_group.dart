@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../../theme/app_colors.dart';
@@ -147,12 +148,14 @@ class _TuliAvatarState extends State<TuliAvatar> {
         ),
         clipBehavior: Clip.antiAlias,
         child: _hasNetworkImage
-            ? Image.network(
-                widget.imageUrl!,
+            // Cache em disco/memória + decodificação no tamanho exibido (2x).
+            ? CachedNetworkImage(
+                imageUrl: widget.imageUrl!,
                 fit: BoxFit.cover,
                 width: widget.size,
                 height: widget.size,
-                errorBuilder: (_, __, ___) => _initialsText(display),
+                memCacheWidth: (widget.size * 2).round(),
+                errorWidget: (_, __, ___) => _initialsText(display),
               )
             : _initialsText(display),
       ),

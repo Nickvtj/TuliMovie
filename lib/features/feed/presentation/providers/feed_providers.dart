@@ -7,6 +7,7 @@ import '../../../social/presentation/providers/social_providers.dart';
 import '../../domain/entities/review_entity.dart';
 import '../../domain/repositories/review_repository.dart';
 import '../../domain/usecases/get_feed_page_use_case.dart';
+import '../../domain/usecases/get_review_by_id_use_case.dart';
 import '../../domain/usecases/get_movie_group_reviews_use_case.dart';
 import '../../domain/usecases/toggle_review_reaction_use_case.dart';
 import '../notifiers/feed_notifier.dart';
@@ -15,6 +16,10 @@ final reviewRepositoryProvider = Provider<ReviewRepository>((ref) => sl<ReviewRe
 
 final getFeedPageUseCaseProvider = Provider(
   (ref) => GetFeedPageUseCase(ref.watch(reviewRepositoryProvider)),
+);
+
+final getReviewByIdUseCaseProvider = Provider(
+  (ref) => GetReviewByIdUseCase(ref.watch(reviewRepositoryProvider)),
 );
 
 final toggleReviewReactionUseCaseProvider = Provider(
@@ -37,6 +42,7 @@ final feedNotifierProvider = StateNotifierProvider<FeedNotifier, FeedState>((ref
       return followingIds == null || review.isFromNetworkOf(userId, followingIds);
     },
     getFeedPage: ref.watch(getFeedPageUseCaseProvider),
+    getReview: ref.watch(getReviewByIdUseCaseProvider),
     toggleReaction: ref.watch(toggleReviewReactionUseCaseProvider),
   );
 

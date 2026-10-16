@@ -1,8 +1,8 @@
-import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 
 import '../config/env_config.dart';
+import '../config/firebase_bootstrap.dart';
 
 /// Web Push (PWA iOS 16.4+) + Android via FCM.
 class PushNotificationService {
@@ -12,7 +12,7 @@ class PushNotificationService {
 
   FirebaseMessaging? get _messaging {
     if (_messagingOverride != null) return _messagingOverride;
-    if (Firebase.apps.isEmpty) return null;
+    if (!isFirebaseReady) return null;
     return FirebaseMessaging.instance;
   }
 

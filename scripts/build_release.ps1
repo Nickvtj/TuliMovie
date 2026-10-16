@@ -20,7 +20,8 @@ Write-Host ">> flutter pub get"
 flutter pub get
 
 Write-Host ">> flutter build web --release (Wasm/CanvasKit auto)"
-flutter build web --release @defines
+# --no-web-resources-cdn: CanvasKit servido pelo próprio site (evita tela branca no iPhone).
+flutter build web --release --no-web-resources-cdn @defines
 
 Write-Host ">> flutter build apk --release"
 flutter build apk --release @defines

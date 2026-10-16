@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../theme/app_colors.dart';
+import '../../theme/app_effects.dart';
 import '../../theme/app_theme.dart';
 
 class TuliGlowFab extends StatelessWidget {
@@ -29,7 +30,7 @@ class TuliGlowFab extends StatelessWidget {
             boxShadow: [
               BoxShadow(
                 color: AppColors.gold.withValues(alpha: 0.45),
-                blurRadius: 20,
+                blurRadius: AppEffects.blur(20),
                 offset: const Offset(0, 6),
                 spreadRadius: -2,
               ),

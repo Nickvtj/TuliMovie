@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../theme/app_colors.dart';
+import '../../theme/app_effects.dart';
 import '../../theme/app_gradients.dart';
 import '../../theme/app_theme.dart';
 
@@ -65,7 +66,7 @@ class _TuliCardState extends State<TuliCard> {
       return [
         BoxShadow(
           color: Colors.black.withValues(alpha: 0.35),
-          blurRadius: 24,
+          blurRadius: AppEffects.blur(24),
           offset: const Offset(0, 8),
         ),
       ];
@@ -74,7 +75,7 @@ class _TuliCardState extends State<TuliCard> {
       return [
         BoxShadow(
           color: AppColors.gold.withValues(alpha: 0.12),
-          blurRadius: 20,
+          blurRadius: AppEffects.blur(20),
           spreadRadius: -4,
         ),
       ];

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../theme/app_colors.dart';
+import '../../theme/app_effects.dart';
 import 'tuli_status_dot.dart';
 
 /// Barra inferior com FAB central (+) elevado — padrão app moderno.
@@ -170,7 +171,7 @@ class _PrimaryFab extends StatelessWidget {
         boxShadow: [
           BoxShadow(
             color: AppColors.gold.withValues(alpha: selected ? 0.55 : 0.35),
-            blurRadius: 24,
+            blurRadius: AppEffects.blur(24),
             spreadRadius: 2,
             offset: const Offset(0, 4),
           ),

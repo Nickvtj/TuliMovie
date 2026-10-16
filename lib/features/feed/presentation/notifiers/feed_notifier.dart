@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/review_entity.dart';
 import '../../domain/repositories/review_repository.dart';
 import '../../domain/usecases/get_feed_page_use_case.dart';
+import '../../domain/usecases/get_review_by_id_use_case.dart';
 import '../../domain/usecases/toggle_review_reaction_use_case.dart';
 
 class FeedState {
@@ -47,10 +48,12 @@ class FeedNotifier extends StateNotifier<FeedState> {
     required String? userId,
     required bool Function(ReviewEntity review) isVisible,
     required GetFeedPageUseCase getFeedPage,
+    required GetReviewByIdUseCase getReview,
     required ToggleReviewReactionUseCase toggleReaction,
   })  : _userId = userId,
         _isVisible = isVisible,
         _getFeedPage = getFeedPage,
+        _getReview = getReview,
         _toggleReaction = toggleReaction,
         super(const FeedState());
 
@@ -61,6 +64,7 @@ class FeedNotifier extends StateNotifier<FeedState> {
   /// Esconde posts antigos de quem o usuário deixou de seguir.
   final bool Function(ReviewEntity review) _isVisible;
   final GetFeedPageUseCase _getFeedPage;
+  final GetReviewByIdUseCase _getReview;
   final ToggleReviewReactionUseCase _toggleReaction;
   FeedCursor? _cursor;
 
@@ -73,17 +77,44 @@ class FeedNotifier extends StateNotifier<FeedState> {
     await _load(refresh: false, reset: false);
   }
 
+  /// Atualiza só o card na hora; se o servidor falhar, desfaz.
   Future<void> toggleReaction({
     required String reviewId,
     required String userId,
     required String reactionKey,
   }) async {
-    await _toggleReaction(
-      reviewId: reviewId,
-      userId: userId,
-      reactionKey: reactionKey,
+    final before = state.reviews;
+    _updateReview(
+      reviewId,
+      (review) => review.withReactionToggled(userId: userId, reactionKey: reactionKey),
     );
-    await refresh();
+    try {
+      await _toggleReaction(
+        reviewId: reviewId,
+        userId: userId,
+        reactionKey: reactionKey,
+      );
+    } catch (_) {
+      if (mounted) state = state.copyWith(reviews: before);
+    }
+  }
+
+  /// Relê um único post (ex.: contador de comentários) sem recarregar o feed.
+  Future<void> reloadReview(String reviewId) async {
+    try {
+      final fresh = await _getReview(reviewId);
+      if (fresh != null && mounted) _updateReview(reviewId, (_) => fresh);
+    } catch (_) {
+      // Mantém o card como está; o próximo refresh corrige.
+    }
+  }
+
+  void _updateReview(String reviewId, ReviewEntity Function(ReviewEntity review) update) {
+    state = state.copyWith(
+      reviews: [
+        for (final review in state.reviews) review.id == reviewId ? update(review) : review,
+      ],
+    );
   }
 
   Future<void> _load({required bool refresh, required bool reset}) async {

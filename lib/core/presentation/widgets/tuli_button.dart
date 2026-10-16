@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../theme/app_colors.dart';
+import '../../theme/app_effects.dart';
 import '../../theme/app_gradients.dart';
 import '../../theme/app_theme.dart';
 
@@ -127,7 +128,7 @@ class _TuliButtonState extends State<TuliButton> {
                 ? [
                     BoxShadow(
                       color: AppColors.gold.withValues(alpha: 0.25),
-                      blurRadius: 16,
+                      blurRadius: AppEffects.blur(16),
                       offset: const Offset(0, 4),
                     ),
                   ]

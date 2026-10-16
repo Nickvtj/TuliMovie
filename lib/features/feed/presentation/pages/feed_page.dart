@@ -123,7 +123,8 @@ class _FeedPageState extends ConsumerState<FeedPage> {
                     final review = feed.reviews[index];
                     return ReviewCardWidget(
                       review: review,
-                      onCommentsClosed: ref.read(feedNotifierProvider.notifier).refresh,
+                      onCommentsClosed: () =>
+                          ref.read(feedNotifierProvider.notifier).reloadReview(review.id),
                       onShare: () async {
                         try {
                           await ref.read(shareReviewCardUseCaseProvider).call(review);

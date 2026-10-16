@@ -34,6 +34,9 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
 
   final PagingController<int, MovieEntity> _pagingController = PagingController(firstPageKey: 1);
 
+  bool _isSpinning = false;
+  int? _lastPickedId;
+
   @override
   void initState() {
     super.initState();
@@ -76,6 +79,8 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
         userId: user.id,
         filters: filters,
         page: pageKey,
+        // Lista em cache na tela (recarregada ao marcar "Já vi" ou atualizar).
+        watchedIds: await ref.read(userWatchedMovieIdsProvider.future),
       );
 
       final isLastPage = !result.hasMore || result.movies.length < _pageSize;
@@ -89,8 +94,10 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
     }
   }
 
-  void _refreshFeed() {
-    sl<TuliHttpClient>().clearCache();
+  /// O cache HTTP é por URL: filtro novo já gera consulta nova e o "Já vi" é
+  /// filtrado depois, então só o "puxar para atualizar" descarta o cache.
+  void _refreshFeed({bool clearHttpCache = false}) {
+    if (clearHttpCache) sl<TuliHttpClient>().clearCache();
     _pagingController.refresh();
     ref.invalidate(userWatchedMovieIdsProvider);
   }
@@ -152,27 +159,51 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
     }
   }
 
+  /// Sorteia entre os filmes já carregados na grade (instantâneo, sem rede).
+  /// Só busca na rede se a grade ainda estiver vazia.
   Future<void> _spinLuck() async {
-    final user = ref.read(authSessionProvider).valueOrNull;
-    if (user == null) return;
-
-    final filters = ref.read(discoverFiltersProvider);
-    final useCase = ref.read(getDiscoverMoviesUseCaseProvider);
-    final page = Random().nextInt(5) + 1;
-    final MovieEntity movie;
-    try {
-      final result = await useCase(userId: user.id, filters: filters, page: page);
-      if (result.movies.isEmpty) {
-        if (mounted) _showSnack('Nenhum filme encontrado com esses filtros.');
-        return;
-      }
-      movie = result.movies[Random().nextInt(result.movies.length)];
-    } catch (_) {
-      if (mounted) _showSnack('Não foi possível girar a sorte agora.');
+    if (_isSpinning) return;
+    final candidates = await _spinCandidates();
+    if (!mounted) return;
+    if (candidates.isEmpty) {
+      _showSnack('Nenhum filme encontrado com esses filtros.');
       return;
     }
-    if (!mounted) return;
 
+    // Evita sortear o mesmo filme duas vezes seguidas.
+    final pool = candidates.length > 1
+        ? candidates.where((m) => m.id != _lastPickedId).toList()
+        : candidates;
+    final movie = pool[Random().nextInt(pool.length)];
+    _lastPickedId = movie.id;
+    await _showPick(movie);
+  }
+
+  Future<List<MovieEntity>> _spinCandidates() async {
+    final loaded = _pagingController.itemList ?? const <MovieEntity>[];
+    if (loaded.isNotEmpty) return loaded;
+
+    final user = ref.read(authSessionProvider).valueOrNull;
+    if (user == null) return const [];
+
+    setState(() => _isSpinning = true);
+    try {
+      final result = await ref.read(getDiscoverMoviesUseCaseProvider).call(
+            userId: user.id,
+            filters: ref.read(discoverFiltersProvider),
+            page: 1,
+            watchedIds: await ref.read(userWatchedMovieIdsProvider.future),
+          );
+      return result.movies;
+    } catch (_) {
+      if (mounted) _showSnack('Não foi possível girar a sorte agora.');
+      return const [];
+    } finally {
+      if (mounted) setState(() => _isSpinning = false);
+    }
+  }
+
+  Future<void> _showPick(MovieEntity movie) async {
     final releaseDate = movie.releaseDate;
     await TuliPickResultSheet.show(
       context,
@@ -207,14 +238,14 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
         padding: const EdgeInsets.only(bottom: 8),
         child: TuliGlowFab(
           icon: Icons.casino_outlined,
-          label: 'Girar a sorte',
+          label: _isSpinning ? 'Sorteando…' : 'Girar a sorte',
           onPressed: _spinLuck,
         ),
       ),
       body: SafeArea(
         child: RefreshIndicator(
           color: AppColors.gold,
-          onRefresh: () async => _refreshFeed(),
+          onRefresh: () async => _refreshFeed(clearHttpCache: true),
           child: CustomScrollView(
             slivers: [
               SliverToBoxAdapter(

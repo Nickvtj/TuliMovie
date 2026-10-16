@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../theme/app_colors.dart';
+import '../../theme/app_effects.dart';
 import '../../theme/app_theme.dart';
 
 /// Campo de texto padronizado — labels, erros, obscure e animação de foco.
@@ -108,7 +109,7 @@ class _TuliInputFieldState extends State<TuliInputField> {
                 ? [
                     BoxShadow(
                       color: AppColors.gold.withValues(alpha: 0.15),
-                      blurRadius: 12,
+                      blurRadius: AppEffects.blur(12),
                       spreadRadius: -2,
                     ),
                   ]

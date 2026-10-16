@@ -54,6 +54,31 @@ class ReviewEntity extends Equatable {
 
   int reactionCount(String emojiKey) => reactions[emojiKey]?.length ?? 0;
 
+  /// Mesma regra do servidor: tira a reação de [userId] se já existe, senão adiciona.
+  ReviewEntity withReactionToggled({required String userId, required String reactionKey}) {
+    final users = List<String>.from(reactions[reactionKey] ?? const []);
+    if (!users.remove(userId)) users.add(userId);
+    return copyWith(reactions: {...reactions, reactionKey: users});
+  }
+
+  ReviewEntity copyWith({Map<String, List<String>>? reactions, int? commentCount}) {
+    return ReviewEntity(
+      id: id,
+      tmdbMovieId: tmdbMovieId,
+      movieTitle: movieTitle,
+      moviePosterPath: moviePosterPath,
+      movieReleaseYear: movieReleaseYear,
+      participants: participants,
+      groupAverageRating: groupAverageRating,
+      comment: comment,
+      createdAt: createdAt,
+      reactions: reactions ?? this.reactions,
+      containsSpoiler: containsSpoiler,
+      authorId: authorId,
+      commentCount: commentCount ?? this.commentCount,
+    );
+  }
+
   @override
   List<Object?> get props => [
         id,
