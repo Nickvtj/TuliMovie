@@ -32,6 +32,7 @@ class MatchRoomRepositoryImpl implements MatchRoomRepository {
     required List<String> invitedIds,
     required MatchFiltersEntity filters,
     required List<MatchCandidateEntity> candidates,
+    required int? nextCandidatePage,
   }) async {
     final invited = invitedIds.where((id) => id != host.id).toSet().toList();
     final MatchRoomModel model;
@@ -45,6 +46,7 @@ class MatchRoomRepositoryImpl implements MatchRoomRepository {
           filters: filters,
           candidates: candidates,
           status: MatchRoomStatus.waiting,
+          nextCandidatePage: nextCandidatePage,
           createdAt: DateTime.now(),
         ),
       );
@@ -73,6 +75,25 @@ class MatchRoomRepositoryImpl implements MatchRoomRepository {
           ),
       ]);
     } catch (_) {}
+  }
+
+  @override
+  Future<void> appendCandidates({
+    required String roomId,
+    required int fromPage,
+    required List<MatchCandidateEntity> candidates,
+    required int? nextPage,
+  }) async {
+    try {
+      await _dataSource.appendCandidates(
+        roomId: roomId,
+        fromPage: fromPage,
+        candidates: candidates,
+        nextPage: nextPage,
+      );
+    } catch (e) {
+      throw AppException(message: 'Erro ao buscar mais filmes.', cause: e);
+    }
   }
 
   @override

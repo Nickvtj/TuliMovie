@@ -39,6 +39,8 @@ abstract interface class ReviewFirestoreDataSource {
 
   Future<ReviewModel> createReview(ReviewModel review);
 
+  Future<void> deleteReview(String reviewId);
+
   Future<List<ReviewModel>> fetchRecentReviews({int limit = 250});
 }
 
@@ -160,6 +162,9 @@ class ReviewFirestoreDataSourceImpl implements ReviewFirestoreDataSource {
     await docRef.set(payload.toJson());
     return payload;
   }
+
+  @override
+  Future<void> deleteReview(String reviewId) => _collection.doc(reviewId).delete();
 
   @override
   Future<void> toggleReaction({

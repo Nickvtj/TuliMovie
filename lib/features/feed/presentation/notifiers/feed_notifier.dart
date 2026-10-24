@@ -109,6 +109,13 @@ class FeedNotifier extends StateNotifier<FeedState> {
     }
   }
 
+  /// Tira do feed um post excluído, sem recarregar a lista.
+  void removeReview(String reviewId) {
+    state = state.copyWith(
+      reviews: state.reviews.where((review) => review.id != reviewId).toList(),
+    );
+  }
+
   void _updateReview(String reviewId, ReviewEntity Function(ReviewEntity review) update) {
     state = state.copyWith(
       reviews: [

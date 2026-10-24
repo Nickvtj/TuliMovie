@@ -203,6 +203,9 @@ class MovieDetailsPage extends ConsumerWidget {
                                     child: ReviewCardWidget(
                                       review: review,
                                       compact: true,
+                                      onDelete: isMyReview(ref, review)
+                                          ? () => deleteReview(ref, review)
+                                          : null,
                                       onReact: user == null
                                           ? null
                                           : (key) async {

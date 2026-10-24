@@ -8,7 +8,6 @@ import '../../../auth/domain/entities/user_entity.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../../social/presentation/providers/social_providers.dart';
 import '../../domain/entities/match_filters_entity.dart';
-import '../../domain/usecases/pick_match_candidates_use_case.dart';
 import '../providers/match_providers.dart';
 import '../widgets/match_active_filters_bar.dart';
 import '../widgets/match_setup_sheet.dart';
@@ -45,13 +44,13 @@ class _MatchLobbyPageState extends ConsumerState<MatchLobbyPage> {
     setState(() => _isCreating = true);
     try {
       // Exclui o que o host e os convidados já viram.
-      final candidates = await ref.read(pickMatchCandidatesUseCaseProvider).call(
+      final batch = await ref.read(pickMatchCandidatesUseCaseProvider).call(
             hostId: user.id,
             participantIds: {user.id, ..._invitedIds},
             filters: _filters,
           );
 
-      if (candidates.isEmpty) {
+      if (batch.candidates.isEmpty) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Nenhum filme novo encontrado com esses filtros.')),
@@ -64,7 +63,8 @@ class _MatchLobbyPageState extends ConsumerState<MatchLobbyPage> {
             host: user,
             invitedIds: _invitedIds.toList(),
             filters: _filters,
-            candidates: candidates,
+            candidates: batch.candidates,
+            nextCandidatePage: batch.nextPage,
           );
 
       if (!mounted) return;
@@ -142,7 +142,7 @@ class _MatchLobbyPageState extends ConsumerState<MatchLobbyPage> {
               ),
               child: TuliButton(
                 label: _invitedIds.isEmpty
-                    ? 'Jogar sozinho (${PickMatchCandidatesUseCase.candidateCount} filmes)'
+                    ? 'Jogar sozinho'
                     : 'Criar sala e convidar ${_invitedIds.length}',
                 icon: Icons.play_arrow_rounded,
                 expand: true,

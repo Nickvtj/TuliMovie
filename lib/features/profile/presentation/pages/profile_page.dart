@@ -10,6 +10,7 @@ import '../../../auth/domain/entities/favorite_movie_entity.dart';
 import '../../../auth/domain/entities/user_entity.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../../awards/presentation/pages/tuli_awards_page.dart';
+import '../../../feed/presentation/providers/feed_providers.dart';
 import '../../../feed/presentation/widgets/review_card_widget.dart';
 import '../../../movies/presentation/pages/movie_details_page.dart';
 import '../../../movies/presentation/providers/movie_providers.dart';
@@ -519,13 +520,13 @@ class _TabButton extends StatelessWidget {
   }
 }
 
-class _ReviewsSliver extends StatelessWidget {
+class _ReviewsSliver extends ConsumerWidget {
   const _ReviewsSliver({required this.data});
 
   final ProfileDashboardEntity data;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     if (data.recentReviews.isEmpty) {
       return const SliverToBoxAdapter(
         child: Padding(
@@ -548,6 +549,7 @@ class _ReviewsSliver extends StatelessWidget {
           return ReviewCardWidget(
             review: review,
             compact: true,
+            onDelete: isMyReview(ref, review) ? () => deleteReview(ref, review) : null,
             onOpenMovie: (_) {
               Navigator.of(context).push(
                 MaterialPageRoute<void>(

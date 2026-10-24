@@ -125,6 +125,7 @@ class _FeedPageState extends ConsumerState<FeedPage> {
                       review: review,
                       onCommentsClosed: () =>
                           ref.read(feedNotifierProvider.notifier).reloadReview(review.id),
+                      onDelete: isMyReview(ref, review) ? () => deleteReview(ref, review) : null,
                       onShare: () async {
                         try {
                           await ref.read(shareReviewCardUseCaseProvider).call(review);

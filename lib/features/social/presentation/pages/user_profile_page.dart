@@ -160,6 +160,7 @@ class _UserReviewsList extends ConsumerWidget {
                     child: ReviewCardWidget(
                       review: review,
                       compact: true,
+                      onDelete: isMyReview(ref, review) ? () => deleteReview(ref, review) : null,
                       onOpenMovie: (_) {
                         Navigator.of(context).push(
                           MaterialPageRoute<void>(

@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/presentation/widgets/widgets.dart';
 import '../../../shell/presentation/pages/main_shell_page.dart';
 import '../services/auth_session_policy.dart';
-import '../widgets/push_permission_prompt.dart';
 import '../providers/auth_providers.dart';
 import 'choose_username_page.dart';
 import 'login_register_page.dart';
@@ -69,7 +68,7 @@ class _UsernameGate extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final profile = ref.watch(userProfileProvider(userId));
     final isSubmitting = ref.watch(authFormNotifierProvider.select((s) => s.isSubmitting));
-    const shell = PushPermissionPrompt(child: MainShellPage());
+    const shell = MainShellPage();
 
     if (profile.valueOrNull?.hasUsername ?? false) return shell;
     // Firestore indisponível: mantém o fallback offline do app.

@@ -53,6 +53,7 @@ import '../services/image_export_service.dart';
 import '../../features/movie_match/data/datasources/match_room_firestore_data_source.dart';
 import '../../features/movie_match/data/repositories/match_room_repository_impl.dart';
 import '../../features/movie_match/domain/repositories/match_room_repository.dart';
+import '../../features/movie_match/domain/usecases/load_more_match_candidates_use_case.dart';
 import '../../features/movie_match/domain/usecases/pick_match_candidates_use_case.dart';
 import '../../features/tools/data/datasources/watchlist_firestore_data_source.dart';
 import '../../features/movies/data/datasources/tmdb_remote_data_source.dart';
@@ -139,6 +140,12 @@ Future<void> configureDependencies() async {
         reviewRepository: sl<ReviewRepository>(),
         watchedMoviesRepository: sl<WatchedMoviesRepository>(),
         watchlistDataSource: sl<WatchlistFirestoreDataSource>(),
+      ),
+    )
+    ..registerLazySingleton(
+      () => LoadMoreMatchCandidatesUseCase(
+        pickCandidates: sl<PickMatchCandidatesUseCase>(),
+        rooms: sl<MatchRoomRepository>(),
       ),
     )
     ..registerLazySingleton<PushNotificationService>(PushNotificationService.new)

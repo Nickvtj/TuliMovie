@@ -3,9 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/di/injection.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
+import '../../../profile/presentation/providers/profile_providers.dart';
 import '../../../social/presentation/providers/social_providers.dart';
 import '../../domain/entities/review_entity.dart';
 import '../../domain/repositories/review_repository.dart';
+import '../../domain/usecases/delete_review_use_case.dart';
 import '../../domain/usecases/get_feed_page_use_case.dart';
 import '../../domain/usecases/get_review_by_id_use_case.dart';
 import '../../domain/usecases/get_movie_group_reviews_use_case.dart';
@@ -28,6 +30,10 @@ final toggleReviewReactionUseCaseProvider = Provider(
 
 final getMovieGroupReviewsUseCaseProvider = Provider(
   (ref) => GetMovieGroupReviewsUseCase(ref.watch(reviewRepositoryProvider)),
+);
+
+final deleteReviewUseCaseProvider = Provider(
+  (ref) => DeleteReviewUseCase(ref.watch(reviewRepositoryProvider)),
 );
 
 final feedNotifierProvider = StateNotifierProvider<FeedNotifier, FeedState>((ref) {
@@ -84,3 +90,23 @@ final userReviewsProvider =
     FutureProvider.autoDispose.family<List<ReviewEntity>, String>((ref, authorId) {
   return ref.watch(reviewRepositoryProvider).getReviewsByAuthor(authorId);
 });
+
+/// `true` quando o usuário logado é o autor de [review] (pode excluir).
+bool isMyReview(WidgetRef ref, ReviewEntity review) {
+  final me = ref.watch(authSessionProvider).valueOrNull?.id;
+  return me != null && review.authorId == me;
+}
+
+/// Exclui a avaliação do usuário logado e atualiza as listas que a exibem.
+Future<void> deleteReview(WidgetRef ref, ReviewEntity review) async {
+  final me = ref.read(authSessionProvider).valueOrNull?.id;
+  if (me == null) return;
+
+  await ref.read(deleteReviewUseCaseProvider).call(review: review, userId: me);
+
+  ref.read(feedNotifierProvider.notifier).removeReview(review.id);
+  ref
+    ..invalidate(profileDashboardProvider)
+    ..invalidate(userReviewsProvider(me))
+    ..invalidate(movieGroupReviewsProvider(review.tmdbMovieId));
+}

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/errors/app_exception.dart';
 import '../../../../core/presentation/widgets/widgets.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -23,6 +24,7 @@ class ReviewCardWidget extends StatelessWidget {
     this.onReact,
     this.onShare,
     this.onCommentsClosed,
+    this.onDelete,
     this.compact = false,
   });
 
@@ -33,6 +35,9 @@ class ReviewCardWidget extends StatelessWidget {
 
   /// Chamado ao voltar dos comentários — permite atualizar contadores.
   final VoidCallback? onCommentsClosed;
+
+  /// Só para o autor: exibe o menu "Excluir avaliação" (com confirmação).
+  final Future<void> Function()? onDelete;
   final bool compact;
 
   Future<void> _openComments(BuildContext context) async {
@@ -40,6 +45,38 @@ class ReviewCardWidget extends StatelessWidget {
       MaterialPageRoute<void>(builder: (_) => ReviewCommentsPage(reviewId: review.id)),
     );
     onCommentsClosed?.call();
+  }
+
+  Future<void> _confirmDelete(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Excluir avaliação?'),
+          content: Text(
+            'Sua avaliação de ${review.movieTitle} some do feed e do seu perfil. '
+            'Não dá para desfazer.',
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
+            FilledButton(
+              style: FilledButton.styleFrom(backgroundColor: AppColors.neonRedDeep),
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Excluir'),
+            ),
+          ],
+        );
+      },
+    );
+    if (confirmed != true || !context.mounted) return;
+
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await onDelete!();
+      messenger.showSnackBar(const SnackBar(content: Text('Avaliação excluída.')));
+    } on AppException catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text(e.message)));
+    }
   }
 
   @override
@@ -61,6 +98,7 @@ class ReviewCardWidget extends StatelessWidget {
               author: author,
               authorId: review.authorId,
               timeLabel: formatRelativeTimePt(review.createdAt),
+              onDelete: onDelete == null ? null : () => _confirmDelete(context),
             ),
           if (watchedWith.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.sm),
@@ -132,6 +170,7 @@ class _AuthorHeader extends StatelessWidget {
     required this.author,
     required this.authorId,
     required this.timeLabel,
+    this.onDelete,
   });
 
   final ReviewParticipantEntity author;
@@ -139,6 +178,7 @@ class _AuthorHeader extends StatelessWidget {
   /// Vazio em posts antigos (sem autor gravado) — sem link para o perfil.
   final String authorId;
   final String timeLabel;
+  final VoidCallback? onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -178,6 +218,25 @@ class _AuthorHeader extends StatelessWidget {
               ],
             ),
           ),
+          if (onDelete != null)
+            PopupMenuButton<VoidCallback>(
+              tooltip: 'Mais opções',
+              icon: const Icon(Icons.more_horiz_rounded, color: AppColors.textMuted),
+              color: AppColors.surfaceElevated,
+              onSelected: (action) => action(),
+              itemBuilder: (_) => [
+                PopupMenuItem(
+                  value: onDelete,
+                  child: const Row(
+                    children: [
+                      Icon(Icons.delete_outline_rounded, size: 20, color: AppColors.neonRed),
+                      SizedBox(width: AppSpacing.md),
+                      Text('Excluir avaliação'),
+                    ],
+                  ),
+                ),
+              ],
+            ),
         ],
       ),
     );

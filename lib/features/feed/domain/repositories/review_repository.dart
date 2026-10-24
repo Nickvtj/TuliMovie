@@ -40,4 +40,6 @@ abstract interface class ReviewRepository {
   });
 
   Future<Set<int>> watchedMovieIdsForUsers(Set<String> userIds);
+
+  Future<void> deleteReview(String reviewId);
 }

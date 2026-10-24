@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_effects.dart';
 
 /// Tokens do fluxo de auth — cores alinhadas a [AppColors].
 abstract final class AuthTokens {
@@ -123,7 +124,7 @@ abstract final class AuthTokens {
   static List<BoxShadow> primaryButtonGlow = [
     BoxShadow(
       color: primaryYellow.withValues(alpha: 0.45),
-      blurRadius: 20,
+      blurRadius: AppEffects.blur(20),
       offset: const Offset(0, 6),
       spreadRadius: -2,
     ),
@@ -132,7 +133,7 @@ abstract final class AuthTokens {
   static List<BoxShadow> logoGlowStrong = [
     BoxShadow(
       color: primaryYellow.withValues(alpha: 0.35),
-      blurRadius: 30,
+      blurRadius: AppEffects.blur(30),
       spreadRadius: 5,
     ),
   ];
@@ -140,7 +141,7 @@ abstract final class AuthTokens {
   static List<BoxShadow> welcomePrimaryGlow = [
     BoxShadow(
       color: primaryYellow.withValues(alpha: 0.5),
-      blurRadius: 28,
+      blurRadius: AppEffects.blur(28),
       spreadRadius: 4,
       offset: Offset(0, 4),
     ),

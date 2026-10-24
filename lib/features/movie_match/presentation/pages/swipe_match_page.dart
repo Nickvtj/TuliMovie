@@ -4,9 +4,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/presentation/widgets/widgets.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_theme.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
+import '../../domain/entities/match_candidate_entity.dart';
 import '../../domain/entities/match_room_entity.dart';
 import '../../domain/utils/match_consensus_calculator.dart';
+import '../notifiers/match_deck_notifier.dart';
 import '../providers/match_providers.dart';
 import '../widgets/match_active_filters_bar.dart';
 import '../widgets/match_celebration_dialog.dart';
@@ -56,6 +59,19 @@ class _SwipeMatchPageState extends ConsumerState<SwipeMatchPage> {
     });
   }
 
+  /// Quem da sala (fora eu) já curtiu [movieId].
+  static List<String> _likedBy(
+    MatchRoomEntity room,
+    Map<String, Map<int, bool>> likes,
+    String? me,
+    int movieId,
+  ) {
+    return [
+      for (final userId in room.participantIds)
+        if (userId != me && likes[userId]?[movieId] == true) userId,
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
     ref.listen(matchLikesStreamProvider(widget.roomId), (previous, next) {
@@ -66,8 +82,6 @@ class _SwipeMatchPageState extends ConsumerState<SwipeMatchPage> {
     });
 
     final roomAsync = ref.watch(matchRoomStreamProvider(widget.roomId));
-    final likesAsync = ref.watch(matchLikesStreamProvider(widget.roomId));
-    final user = ref.watch(authSessionProvider).valueOrNull;
 
     return roomAsync.when(
       loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
@@ -78,126 +92,241 @@ class _SwipeMatchPageState extends ConsumerState<SwipeMatchPage> {
         }
 
         if (room.status == MatchRoomStatus.matched && room.matchedMovieId != null) {
-          final movie = room.candidates.firstWhere(
-            (c) => c.tmdbMovieId == room.matchedMovieId,
-            orElse: () => room.candidates.first,
+          return _MatchedView(room: room);
+        }
+
+        return _buildSwipe(room);
+      },
+    );
+  }
+
+  Widget _buildSwipe(MatchRoomEntity room) {
+    final deck = ref.watch(matchDeckProvider(widget.roomId));
+    final deckNotifier = ref.read(matchDeckProvider(widget.roomId).notifier);
+    final likes = ref.watch(matchLikesStreamProvider(widget.roomId)).valueOrNull ?? const {};
+    final user = ref.watch(authSessionProvider).valueOrNull;
+    final canSwipe = deck.hasCards && user != null;
+
+    bool onSwipe(MatchCandidateEntity candidate, CardSwiperDirection direction) {
+      if (user == null) return false;
+      ref.read(matchRoomRepositoryProvider).submitSwipe(
+            roomId: widget.roomId,
+            userId: user.id,
+            tmdbMovieId: candidate.tmdbMovieId,
+            liked: direction == CardSwiperDirection.right,
           );
-          return Scaffold(
-            body: SafeArea(
-              child: Column(
-                children: [
-                  const TuliScreenHeader(
-                    mode: TuliScreenHeaderMode.stacked,
-                    title: 'Match!',
-                  ),
-                  Expanded(
-                    child: Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(24),
-                        child: Text(
-                          'Vocês querem ver:\n${movie.title}',
-                          textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.headlineSmall,
+      deckNotifier.onSwiped(candidate);
+      return true;
+    }
+
+    return Scaffold(
+      body: SafeArea(
+        child: Column(
+          children: [
+            TuliScreenHeader(
+              mode: TuliScreenHeaderMode.stacked,
+              title: 'Match',
+              subtitle: 'Sala ${room.shortCode} · ${room.participantIds.length} na sala',
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+              child: MatchActiveFiltersBar(filters: room.filters),
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.lg,
+                  AppSpacing.sm,
+                  AppSpacing.lg,
+                  AppSpacing.md,
+                ),
+                child: canSwipe
+                    ? CardSwiper(
+                        key: ValueKey(deck.version),
+                        controller: _swiperController,
+                        cardsCount: deck.cards.length,
+                        numberOfCardsDisplayed: deck.cards.length >= 2 ? 2 : 1,
+                        isLoop: false,
+                        allowedSwipeDirection: const AllowedSwipeDirection.symmetric(
+                          horizontal: true,
                         ),
-                      ),
-                    ),
-                  ),
-                ],
+                        padding: const EdgeInsets.only(bottom: AppSpacing.lg),
+                        backCardOffset: const Offset(0, 22),
+                        scale: 0.92,
+                        cardBuilder: (context, index, horizontal, vertical) {
+                          final candidate = deck.cards[index];
+                          return MatchSwipeCard(
+                            candidate: candidate,
+                            likedByIds: _likedBy(room, likes, user.id, candidate.tmdbMovieId),
+                            dragPercent: horizontal,
+                          );
+                        },
+                        onSwipe: (previousIndex, currentIndex, direction) =>
+                            onSwipe(deck.cards[previousIndex], direction),
+                        onEnd: deckNotifier.onEnd,
+                      )
+                    : _DeckStatus(deck: deck),
               ),
             ),
-          );
-        }
-
-        final candidates = room.candidates;
-        if (candidates.isEmpty) {
-          return const Scaffold(body: Center(child: Text('Sem filmes na rodada.')));
-        }
-
-        return Scaffold(
-          body: SafeArea(
-            child: Column(
-              children: [
-                TuliScreenHeader(
-                  mode: TuliScreenHeaderMode.stacked,
-                  title: 'Swipe · ${room.shortCode}',
-                  trailingActions: [
-                    Padding(
-                      padding: const EdgeInsets.only(top: 4),
-                      child: Text(
-                        '${room.participantIds.length} na sala',
-                        style: Theme.of(context).textTheme.labelMedium,
-                      ),
-                    ),
-                  ],
-                ),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-                    child: Column(
-                      children: [
-                        MatchActiveFiltersBar(filters: room.filters),
-                        const SizedBox(height: 8),
-                        Expanded(
-                          child: CardSwiper(
-                            controller: _swiperController,
-                            cardsCount: candidates.length,
-                            numberOfCardsDisplayed: candidates.length >= 2 ? 2 : 1,
-                            padding: const EdgeInsets.only(top: 8, bottom: 8),
-                            backCardOffset: const Offset(0, 18),
-                            scale: 0.94,
-                            cardBuilder: (context, index, horizontal, vertical) {
-                              return MatchSwipeCard(candidate: candidates[index]);
-                            },
-                            onSwipe: (previousIndex, currentIndex, direction) {
-                              if (previousIndex == null || user == null) return true;
-                              final candidate = candidates[previousIndex];
-                              final liked = direction == CardSwiperDirection.right;
-
-                              ref.read(matchRoomRepositoryProvider).submitSwipe(
-                                    roomId: widget.roomId,
-                                    userId: user.id,
-                                    tmdbMovieId: candidate.tmdbMovieId,
-                                    liked: liked,
-                                  );
-                              return true;
-                            },
-                          ),
-                        ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            _SwipeHint(color: AppColors.neonRed, label: 'Nope ←', icon: Icons.close),
-                            _SwipeHint(color: AppColors.gold, label: 'Match →', icon: Icons.favorite),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
+            _SwipeActions(
+              onNope: canSwipe ? () => _swiperController.swipe(CardSwiperDirection.left) : null,
+              onLike: canSwipe ? () => _swiperController.swipe(CardSwiperDirection.right) : null,
             ),
-          ),
-        );
-      },
+            const SizedBox(height: AppSpacing.lg),
+          ],
+        ),
+      ),
     );
   }
 }
 
-class _SwipeHint extends StatelessWidget {
-  const _SwipeHint({required this.color, required this.label, required this.icon});
+/// Sem cards: carregando, buscando mais ou rodada esgotada.
+class _DeckStatus extends StatelessWidget {
+  const _DeckStatus({required this.deck});
 
-  final Color color;
-  final String label;
-  final IconData icon;
+  final MatchDeckState deck;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!deck.isReady || deck.isLoadingMore || deck.hasMore) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const CircularProgressIndicator(),
+            const SizedBox(height: AppSpacing.lg),
+            Text(
+              deck.isReady ? 'Buscando mais filmes…' : 'Embaralhando os filmes…',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+          ],
+        ),
+      );
+    }
+    return const TuliEmptyState(
+      message: 'Você viu todos os filmes desta rodada.\n'
+          'Espere a galera votar ou crie uma sala com outros filtros.',
+      icon: Icons.movie_filter_outlined,
+    );
+  }
+}
+
+class _SwipeActions extends StatelessWidget {
+  const _SwipeActions({required this.onNope, required this.onLike});
+
+  final VoidCallback? onNope;
+  final VoidCallback? onLike;
 
   @override
   Widget build(BuildContext context) {
     return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Icon(icon, color: color),
-        const SizedBox(width: 6),
-        Text(label, style: Theme.of(context).textTheme.labelMedium),
+        _RoundAction(
+          icon: Icons.close_rounded,
+          color: AppColors.neonRed,
+          size: 60,
+          tooltip: 'Não quero',
+          onPressed: onNope,
+        ),
+        const SizedBox(width: AppSpacing.xxl + AppSpacing.sm),
+        _RoundAction(
+          icon: Icons.favorite_rounded,
+          color: AppColors.gold,
+          size: 72,
+          tooltip: 'Quero ver',
+          onPressed: onLike,
+        ),
       ],
+    );
+  }
+}
+
+class _RoundAction extends StatelessWidget {
+  const _RoundAction({
+    required this.icon,
+    required this.color,
+    required this.size,
+    required this.tooltip,
+    required this.onPressed,
+  });
+
+  final IconData icon;
+  final Color color;
+  final double size;
+  final String tooltip;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: AnimatedOpacity(
+        opacity: onPressed == null ? 0.35 : 1,
+        duration: AppDurations.fast,
+        child: Material(
+          color: AppColors.surfaceElevated,
+          shape: CircleBorder(side: BorderSide(color: color.withValues(alpha: 0.6), width: 1.5)),
+          child: InkWell(
+            onTap: onPressed,
+            customBorder: const CircleBorder(),
+            child: SizedBox(
+              width: size,
+              height: size,
+              child: Icon(icon, color: color, size: size * 0.46),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MatchedView extends StatelessWidget {
+  const _MatchedView({required this.room});
+
+  final MatchRoomEntity room;
+
+  @override
+  Widget build(BuildContext context) {
+    final movie = room.candidates.firstWhere(
+      (c) => c.tmdbMovieId == room.matchedMovieId,
+      orElse: () => room.candidates.first,
+    );
+
+    return Scaffold(
+      body: SafeArea(
+        child: Column(
+          children: [
+            const TuliScreenHeader(
+              mode: TuliScreenHeaderMode.stacked,
+              title: 'Match!',
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.xxl,
+                  0,
+                  AppSpacing.xxl,
+                  AppSpacing.xxl,
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      'Vocês querem ver',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            color: AppColors.gold,
+                          ),
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+                    Expanded(child: MatchSwipeCard(candidate: movie)),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

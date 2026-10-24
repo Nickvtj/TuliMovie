@@ -106,6 +106,13 @@ service cloud.firestore {
           request.resource.data.participantIds.toSet()
             == resource.data.participantIds.toSet().union([request.auth.uid].toSet())
         ) ||
+        // Qualquer participante acrescenta o próximo lote de filmes (Match infinito).
+        (
+          request.auth.uid in resource.data.participantIds &&
+          request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['candidates', 'nextCandidatePage']) &&
+          request.resource.data.candidates.size() >= resource.data.candidates.size()
+        ) ||
         // Qualquer participante registra o match encontrado.
         (
           request.auth.uid in resource.data.participantIds &&

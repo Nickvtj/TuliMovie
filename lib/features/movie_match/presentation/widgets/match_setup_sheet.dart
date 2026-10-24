@@ -29,23 +29,29 @@ class MatchSetupSheet extends StatefulWidget {
 }
 
 class _MatchSetupSheetState extends State<MatchSetupSheet> {
+  static const _minYear = 1970;
+  static final _maxYear = DateTime.now().year;
+
   late final Set<int> _providers = {...widget.initial.withWatchProviderIds};
   late final Set<int> _genres = {...widget.initial.genreIds};
   late RangeValues _years = RangeValues(
-    (widget.initial.releaseYearFrom ?? 1980).toDouble(),
-    (widget.initial.releaseYearTo ?? 2026).toDouble(),
+    (widget.initial.releaseYearFrom ?? _minYear).toDouble(),
+    (widget.initial.releaseYearTo ?? _maxYear).toDouble(),
   );
   late int? _maxRuntime = widget.initial.maxRuntimeMinutes;
   late bool _includeWatchlist = widget.initial.includeWatchlist;
 
   void _apply() {
+    final from = _years.start.round();
+    final to = _years.end.round();
     Navigator.pop(
       context,
       MatchFiltersEntity(
         withWatchProviderIds: _providers.toList(),
         genreIds: _genres.toList(),
-        releaseYearFrom: _years.start.round(),
-        releaseYearTo: _years.end.round(),
+        // Intervalo inteiro = sem filtro de época.
+        releaseYearFrom: from == _minYear ? null : from,
+        releaseYearTo: to == _maxYear ? null : to,
         maxRuntimeMinutes: _maxRuntime,
         includeWatchlist: _includeWatchlist,
       ),
@@ -111,9 +117,9 @@ class _MatchSetupSheetState extends State<MatchSetupSheet> {
               style: Theme.of(context).textTheme.titleSmall,
             ),
             RangeSlider(
-              min: 1970,
-              max: 2026,
-              divisions: 56,
+              min: _minYear.toDouble(),
+              max: _maxYear.toDouble(),
+              divisions: _maxYear - _minYear,
               values: _years,
               onChanged: (v) => setState(() => _years = v),
             ),

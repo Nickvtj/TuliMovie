@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../../../../core/config/firebase_firestore_access.dart';
+import '../../domain/entities/match_candidate_entity.dart';
 import '../../domain/entities/match_room_entity.dart';
 import '../models/match_room_model.dart';
 
@@ -47,6 +48,7 @@ class MatchRoomFirestoreDataSource {
       candidates: room.candidates,
       status: room.status,
       matchedMovieId: room.matchedMovieId,
+      nextCandidatePage: room.nextCandidatePage,
       createdAt: room.createdAt,
       expiresAt: room.expiresAt,
     );
@@ -57,6 +59,33 @@ class MatchRoomFirestoreDataSource {
   Future<void> joinRoom({required String roomId, required String userId}) async {
     await _rooms.doc(roomId).update({
       'participantIds': FieldValue.arrayUnion([userId]),
+    });
+  }
+
+  /// Acrescenta o próximo lote de filmes. Só grava se ninguém buscou
+  /// [fromPage] antes (dois participantes podem pedir mais ao mesmo tempo).
+  Future<void> appendCandidates({
+    required String roomId,
+    required int fromPage,
+    required List<MatchCandidateEntity> candidates,
+    required int? nextPage,
+  }) async {
+    final ref = _rooms.doc(roomId);
+    await FirebaseFirestoreAccess.require(override: _firestoreOverride).runTransaction((tx) async {
+      final snap = await tx.get(ref);
+      final data = snap.data();
+      if (data == null || (data['nextCandidatePage'] as num?)?.toInt() != fromPage) return;
+
+      final existingIds = (data['candidates'] as List<dynamic>? ?? [])
+          .whereType<Map<String, dynamic>>()
+          .map((item) => (item['tmdbMovieId'] as num).toInt())
+          .toSet();
+      final fresh = candidates.where((c) => !existingIds.contains(c.tmdbMovieId));
+
+      tx.update(ref, {
+        'candidates': FieldValue.arrayUnion(fresh.map(MatchRoomModel.candidateToJson).toList()),
+        'nextCandidatePage': nextPage ?? FieldValue.delete(),
+      });
     });
   }
 

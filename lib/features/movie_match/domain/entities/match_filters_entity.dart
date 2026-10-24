@@ -36,7 +36,8 @@ class MatchFiltersEntity extends Equatable {
       primaryReleaseDateLte:
           releaseYearTo == null ? null : '$releaseYearTo-12-31',
       runtimeLteMinutes: maxRuntimeMinutes,
-      sortBy: 'popularity.desc',
+      // Mais votados primeiro: clássicos conhecidos → menos avaliados.
+      sortBy: 'vote_count.desc',
     );
   }
 

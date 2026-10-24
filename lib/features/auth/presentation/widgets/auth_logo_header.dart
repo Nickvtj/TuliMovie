@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
+import '../../../../core/theme/app_effects.dart';
 import 'auth_tokens.dart';
 
 class AuthWelcomeHero extends StatelessWidget {
@@ -53,6 +54,25 @@ class AuthWelcomeHero extends StatelessWidget {
 class _WelcomeLogoBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final badge = DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(AuthTokens.logoBoxRadius),
+        color: AuthTokens.primaryYellow.withValues(alpha: 0.1),
+        border: Border.all(
+          color: AuthTokens.primaryYellow.withValues(alpha: 0.3),
+        ),
+      ),
+      child: SizedBox(
+        width: AuthTokens.logoBoxSize,
+        height: AuthTokens.logoBoxSize,
+        child: Icon(
+          Icons.local_movies_rounded,
+          size: 32,
+          color: AuthTokens.primaryYellow,
+        ),
+      ),
+    );
+
     return Stack(
       alignment: Alignment.center,
       clipBehavior: Clip.none,
@@ -67,27 +87,13 @@ class _WelcomeLogoBadge extends StatelessWidget {
         ),
         ClipRRect(
           borderRadius: BorderRadius.circular(AuthTokens.logoBoxRadius),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(AuthTokens.logoBoxRadius),
-                color: AuthTokens.primaryYellow.withValues(alpha: 0.1),
-                border: Border.all(
-                  color: AuthTokens.primaryYellow.withValues(alpha: 0.3),
+          // Desfoque do fundo é caro no iPhone (primeira tela do app).
+          child: AppEffects.reduced
+              ? badge
+              : BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                  child: badge,
                 ),
-              ),
-              child: SizedBox(
-                width: AuthTokens.logoBoxSize,
-                height: AuthTokens.logoBoxSize,
-                child: Icon(
-                  Icons.local_movies_rounded,
-                  size: 32,
-                  color: AuthTokens.primaryYellow,
-                ),
-              ),
-            ),
-          ),
         ),
       ],
     );

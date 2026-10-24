@@ -15,6 +15,7 @@ class MatchRoomEntity extends Equatable {
     required this.candidates,
     required this.status,
     this.matchedMovieId,
+    this.nextCandidatePage,
     required this.createdAt,
     this.expiresAt,
   });
@@ -31,8 +32,16 @@ class MatchRoomEntity extends Equatable {
   final List<MatchCandidateEntity> candidates;
   final MatchRoomStatus status;
   final int? matchedMovieId;
+
+  /// Próxima página do TMDB para buscar mais filmes; `null` quando acabaram.
+  final int? nextCandidatePage;
   final DateTime createdAt;
   final DateTime? expiresAt;
+
+  bool get hasMoreCandidates => nextCandidatePage != null;
+
+  /// Host, convidados e quem já entrou — todos têm o "já vi" excluído da rodada.
+  Set<String> get everyoneIds => {hostId, ...invitedIds, ...participantIds};
 
   String get shortCode => id.length >= 6 ? id.substring(0, 6).toUpperCase() : id.toUpperCase();
 
@@ -52,6 +61,7 @@ class MatchRoomEntity extends Equatable {
         candidates,
         status,
         matchedMovieId,
+        nextCandidatePage,
         createdAt,
         expiresAt,
       ];

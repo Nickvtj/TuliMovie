@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
+import '../../../../core/theme/app_effects.dart';
 import '../state/auth_form_state.dart';
 import 'auth_assets.dart';
 
@@ -81,6 +82,14 @@ class _LoginBackground extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final imageHeight = height * 0.40;
+    final image = Image.asset(
+      AuthAssets.loginBackground,
+      fit: BoxFit.cover,
+      alignment: Alignment.topCenter,
+      width: double.infinity,
+      height: imageHeight * 1.1,
+      errorBuilder: (_, __, ___) => const ColoredBox(color: _pageBg),
+    );
 
     return ColoredBox(
       color: _pageBg,
@@ -103,17 +112,13 @@ class _LoginBackground extends StatelessWidget {
                       0, 0, 0.72, 0, 0,
                       0, 0, 0, 1, 0,
                     ]),
-                    child: ImageFiltered(
-                      imageFilter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
-                      child: Image.asset(
-                        AuthAssets.loginBackground,
-                        fit: BoxFit.cover,
-                        alignment: Alignment.topCenter,
-                        width: double.infinity,
-                        height: imageHeight * 1.1,
-                        errorBuilder: (_, __, ___) => const ColoredBox(color: _pageBg),
-                      ),
-                    ),
+                    // Desfoque da foto é caro no iPhone: lá ela fica só escurecida.
+                    child: AppEffects.reduced
+                        ? image
+                        : ImageFiltered(
+                            imageFilter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
+                            child: image,
+                          ),
                   ),
                   DecoratedBox(
                     decoration: BoxDecoration(

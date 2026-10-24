@@ -123,4 +123,13 @@ class ReviewRepositoryImpl implements ReviewRepository {
       throw AppException(message: 'Erro ao calcular histórico assistido.', cause: e);
     }
   }
+
+  @override
+  Future<void> deleteReview(String reviewId) async {
+    try {
+      await _dataSource.deleteReview(reviewId);
+    } catch (e) {
+      throw AppException(message: 'Não foi possível excluir a avaliação.', cause: e);
+    }
+  }
 }

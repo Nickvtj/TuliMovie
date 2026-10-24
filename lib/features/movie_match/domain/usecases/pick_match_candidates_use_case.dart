@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import '../../../feed/domain/repositories/review_repository.dart';
 import '../../../movies/domain/entities/movie_entity.dart';
 import '../../../movies/domain/repositories/movie_repository.dart';
@@ -24,76 +22,60 @@ class PickMatchCandidatesUseCase {
   final WatchedMoviesRepository _watchedMovies;
   final WatchlistFirestoreDataSource _watchlist;
 
+  /// Filmes por lote; ao chegar perto do fim, o Match busca o próximo.
   static const candidateCount = 15;
 
-  /// [hostId] é dono da watchlist usada quando o filtro pede.
-  Future<List<MatchCandidateEntity>> call({
+  /// Teto de páginas do TMDB lidas por lote (quando quase tudo já foi visto).
+  static const maxPagesPerBatch = 5;
+
+  /// [hostId] é dono da watchlist usada quando o filtro pede (só no 1º lote).
+  /// [excludeIds]: filmes que já estão na rodada.
+  Future<MatchCandidatesBatch> call({
     required String hostId,
     required Set<String> participantIds,
     required MatchFiltersEntity filters,
+    int startPage = 1,
+    Set<int> excludeIds = const {},
   }) async {
     final fromReviews = await _reviews.watchedMovieIdsForUsers(participantIds);
     final personal = <int>{};
     for (final userId in participantIds) {
       personal.addAll(await _safePersonalWatched(userId));
     }
-    final watched = {...fromReviews, ...personal};
+    final skip = {...fromReviews, ...personal, ...excludeIds};
 
     final picked = <MatchCandidateEntity>[];
-    final random = Random();
+    void add(MatchCandidateEntity candidate) {
+      if (skip.add(candidate.tmdbMovieId)) picked.add(candidate);
+    }
 
-    if (filters.includeWatchlist) {
+    if (filters.includeWatchlist && startPage == 1) {
       final items = await _watchlist.watchItems(userId: hostId).first;
       for (final item in items) {
-        if (watched.contains(item.tmdbMovieId)) continue;
-        picked.add(
+        add(
           MatchCandidateEntity(
             tmdbMovieId: item.tmdbMovieId,
             title: item.title,
             posterPath: item.posterPath,
           ),
         );
-        if (picked.length >= candidateCount) break;
       }
     }
 
-    var page = 1;
-    while (picked.length < candidateCount && page <= 5) {
-      final classicQuery = filters.toDiscoverQuery(page: page).copyWith(
-            primaryReleaseDateGte: filters.releaseYearFrom == null
-                ? '1980-01-01'
-                : '${filters.releaseYearFrom}-01-01',
-            primaryReleaseDateLte: filters.releaseYearTo == null
-                ? '2010-12-31'
-                : '${filters.releaseYearTo}-12-31',
-            voteAverageGte: 7.0,
-            sortBy: 'vote_average.desc',
-          );
-
-      final recentQuery = filters.toDiscoverQuery(page: page).copyWith(
-            primaryReleaseDateGte: '${DateTime.now().year - 3}-01-01',
-            sortBy: 'release_date.desc',
-          );
-
-      final batches = await Future.wait([
-        _movies.discoverMoviesQuery(classicQuery),
-        _movies.discoverMoviesQuery(recentQuery),
-      ]);
-
-      final pool = [...batches[0].movies, ...batches[1].movies];
-      pool.shuffle(random);
-
-      for (final movie in pool) {
-        if (watched.contains(movie.id)) continue;
-        if (picked.any((c) => c.tmdbMovieId == movie.id)) continue;
-        picked.add(_toCandidate(movie));
-        if (picked.length >= candidateCount) break;
-      }
+    // Ordem do TMDB preservada: do mais votado para o menos avaliado.
+    var page = startPage;
+    var hasMore = true;
+    while (picked.length < candidateCount && page < startPage + maxPagesPerBatch) {
+      final result = await _movies.discoverMoviesQuery(filters.toDiscoverQuery(page: page));
       page++;
+      result.movies.map(_toCandidate).forEach(add);
+      if (!result.hasMore) {
+        hasMore = false;
+        break;
+      }
     }
 
-    picked.shuffle(random);
-    return picked.take(candidateCount).toList();
+    return MatchCandidatesBatch(candidates: picked, nextPage: hasMore ? page : null);
   }
 
   Future<Set<int>> _safePersonalWatched(String userId) async {
@@ -119,4 +101,13 @@ class PickMatchCandidatesUseCase {
       releaseYear: year,
     );
   }
+}
+
+class MatchCandidatesBatch {
+  const MatchCandidatesBatch({required this.candidates, required this.nextPage});
+
+  final List<MatchCandidateEntity> candidates;
+
+  /// Página do TMDB para o próximo lote; `null` quando não há mais filmes.
+  final int? nextPage;
 }

@@ -14,6 +14,7 @@ class MatchRoomModel {
     required this.candidates,
     required this.status,
     this.matchedMovieId,
+    this.nextCandidatePage,
     required this.createdAt,
     this.expiresAt,
   });
@@ -26,6 +27,7 @@ class MatchRoomModel {
   final List<MatchCandidateEntity> candidates;
   final MatchRoomStatus status;
   final int? matchedMovieId;
+  final int? nextCandidatePage;
   final DateTime createdAt;
   final DateTime? expiresAt;
 
@@ -33,15 +35,7 @@ class MatchRoomModel {
     final candidatesRaw = json['candidates'] as List<dynamic>? ?? [];
     final candidates = candidatesRaw
         .whereType<Map<String, dynamic>>()
-        .map(
-          (item) => MatchCandidateEntity(
-            tmdbMovieId: (item['tmdbMovieId'] as num).toInt(),
-            title: item['title'] as String? ?? '',
-            posterPath: item['posterPath'] as String?,
-            overview: item['overview'] as String?,
-            releaseYear: (item['releaseYear'] as num?)?.toInt(),
-          ),
-        )
+        .map(candidateFromJson)
         .toList();
 
     final filtersMap = json['filters'] as Map<String, dynamic>? ?? {};
@@ -59,6 +53,7 @@ class MatchRoomModel {
       candidates: candidates,
       status: MatchRoomStatus.values.byName(json['status'] as String? ?? 'waiting'),
       matchedMovieId: (json['matchedMovieId'] as num?)?.toInt(),
+      nextCandidatePage: (json['nextCandidatePage'] as num?)?.toInt(),
       createdAt: _parseDate(json['createdAt']) ?? DateTime.now(),
       expiresAt: _parseDate(json['expiresAt']),
     );
@@ -70,19 +65,10 @@ class MatchRoomModel {
       'participantIds': participantIds,
       'invitedIds': invitedIds,
       'filters': _filtersToJson(filters),
-      'candidates': candidates
-          .map(
-            (c) => {
-              'tmdbMovieId': c.tmdbMovieId,
-              'title': c.title,
-              if (c.posterPath != null) 'posterPath': c.posterPath,
-              if (c.overview != null) 'overview': c.overview,
-              if (c.releaseYear != null) 'releaseYear': c.releaseYear,
-            },
-          )
-          .toList(),
+      'candidates': candidates.map(candidateToJson).toList(),
       'status': status.name,
       if (matchedMovieId != null) 'matchedMovieId': matchedMovieId,
+      if (nextCandidatePage != null) 'nextCandidatePage': nextCandidatePage,
       'createdAt': Timestamp.fromDate(createdAt),
       'expiresAt': Timestamp.fromDate(
         expiresAt ?? createdAt.add(const Duration(hours: 6)),
@@ -100,10 +86,29 @@ class MatchRoomModel {
       candidates: candidates,
       status: status,
       matchedMovieId: matchedMovieId,
+      nextCandidatePage: nextCandidatePage,
       createdAt: createdAt,
       expiresAt: expiresAt,
     );
   }
+
+  static MatchCandidateEntity candidateFromJson(Map<String, dynamic> item) {
+    return MatchCandidateEntity(
+      tmdbMovieId: (item['tmdbMovieId'] as num).toInt(),
+      title: item['title'] as String? ?? '',
+      posterPath: item['posterPath'] as String?,
+      overview: item['overview'] as String?,
+      releaseYear: (item['releaseYear'] as num?)?.toInt(),
+    );
+  }
+
+  static Map<String, dynamic> candidateToJson(MatchCandidateEntity c) => {
+        'tmdbMovieId': c.tmdbMovieId,
+        'title': c.title,
+        if (c.posterPath != null) 'posterPath': c.posterPath,
+        if (c.overview != null) 'overview': c.overview,
+        if (c.releaseYear != null) 'releaseYear': c.releaseYear,
+      };
 
   static DateTime? _parseDate(dynamic value) {
     if (value is Timestamp) return value.toDate();

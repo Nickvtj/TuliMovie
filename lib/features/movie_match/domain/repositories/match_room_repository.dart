@@ -14,6 +14,15 @@ abstract interface class MatchRoomRepository {
     required List<String> invitedIds,
     required MatchFiltersEntity filters,
     required List<MatchCandidateEntity> candidates,
+    required int? nextCandidatePage,
+  });
+
+  /// Acrescenta mais filmes à rodada (Match "infinito").
+  Future<void> appendCandidates({
+    required String roomId,
+    required int fromPage,
+    required List<MatchCandidateEntity> candidates,
+    required int? nextPage,
   });
 
   Future<void> joinRoom({required String roomId, required String userId});

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 
 import '../../theme/app_colors.dart';
+import '../../theme/app_effects.dart';
 import '../../theme/app_theme.dart';
 
 /// Skeletons padronizados para carregamento assíncrono (DRY).
@@ -15,6 +16,10 @@ class TuliShimmerLoader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // No iPhone dezenas de brilhos animados (grade de pôsteres) redesenham a
+    // tela sem parar: lá o esqueleto fica estático.
+    if (AppEffects.reduced) return child;
+
     return Shimmer.fromColors(
       baseColor: AppColors.surfaceMuted,
       highlightColor: AppColors.surfaceElevated,
