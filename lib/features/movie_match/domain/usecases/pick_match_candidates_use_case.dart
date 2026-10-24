@@ -28,21 +28,30 @@ class PickMatchCandidatesUseCase {
   /// Teto de páginas do TMDB lidas por lote (quando quase tudo já foi visto).
   static const maxPagesPerBatch = 5;
 
+  /// Filmes que alguém da sala já viu (avaliações + "Já vi"), lidos em paralelo.
+  Future<Set<int>> watchedIdsFor(Set<String> participantIds) async {
+    final results = await Future.wait([
+      _reviews.watchedMovieIdsForUsers(participantIds),
+      for (final userId in participantIds) _safePersonalWatched(userId),
+    ]);
+    return results.expand((ids) => ids).toSet();
+  }
+
   /// [hostId] é dono da watchlist usada quando o filtro pede (só no 1º lote).
   /// [excludeIds]: filmes que já estão na rodada.
+  /// [watchedIds]: "já vi" da sala já calculado (evita reler a cada lote).
   Future<MatchCandidatesBatch> call({
     required String hostId,
     required Set<String> participantIds,
     required MatchFiltersEntity filters,
     int startPage = 1,
     Set<int> excludeIds = const {},
+    Set<int>? watchedIds,
   }) async {
-    final fromReviews = await _reviews.watchedMovieIdsForUsers(participantIds);
-    final personal = <int>{};
-    for (final userId in participantIds) {
-      personal.addAll(await _safePersonalWatched(userId));
-    }
-    final skip = {...fromReviews, ...personal, ...excludeIds};
+    final skip = {
+      ...(watchedIds ?? await watchedIdsFor(participantIds)),
+      ...excludeIds,
+    };
 
     final picked = <MatchCandidateEntity>[];
     void add(MatchCandidateEntity candidate) {

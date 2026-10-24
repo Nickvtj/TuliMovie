@@ -7,8 +7,8 @@ Future<void> enforceAuthSessionPolicy() async {
   final authRepository = sl<AuthRepository>();
   final storage = sl<AuthRememberMeStorage>();
 
-  final user = await authRepository.getCurrentUser();
-  if (user == null) return;
+  // Só o Auth: ler o perfil aqui atrasava a primeira tela (a sessão já o lê).
+  if (!authRepository.isSignedIn) return;
 
   final invalidate = await storage.shouldInvalidatePersistedSession();
   if (!invalidate) return;

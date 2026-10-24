@@ -55,7 +55,6 @@ Copie `dart_defines.example.json` → `dart_defines.json` (não vai pro Git) e p
 ## Deploy Hosting
 
 ```powershell
-Copy-Item web/firebase-messaging-sw.js build/web/ -Force
 firebase deploy --only hosting
 ```
 

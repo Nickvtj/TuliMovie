@@ -60,10 +60,6 @@ if (-not (Test-Path "build/web/index.html")) {
   Write-Error "Build web falhou."
 }
 
-if (Test-Path "web/firebase-messaging-sw.js") {
-  Copy-Item -Force "web/firebase-messaging-sw.js" "build/web/firebase-messaging-sw.js"
-}
-
 Write-Host ">> npx firebase-tools deploy --only hosting"
 $npx = Join-Path (Split-Path $node -Parent) "npx.cmd"
 if (Test-Path $npx) {

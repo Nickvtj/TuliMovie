@@ -7,6 +7,9 @@ abstract interface class AuthRepository {
 
   Future<UserEntity?> getCurrentUser();
 
+  /// Há sessão no Firebase Auth (sem ler o perfil no Firestore).
+  bool get isSignedIn;
+
   /// Perfil público em tempo real (`users/{userId}`).
   Stream<UserEntity?> watchUserProfile(String userId);
 

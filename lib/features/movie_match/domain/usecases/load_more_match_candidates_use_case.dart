@@ -13,9 +13,15 @@ class LoadMoreMatchCandidatesUseCase {
   final PickMatchCandidatesUseCase _pickCandidates;
   final MatchRoomRepository _rooms;
 
+  /// "Já vi" de cada sala, lido uma vez e reaproveitado nos próximos lotes.
+  final _watchedByRoom = <String, Set<int>>{};
+
   Future<void> call(MatchRoomEntity room) async {
     final fromPage = room.nextCandidatePage;
     if (fromPage == null) return;
+
+    final watched = _watchedByRoom[room.id] ??=
+        await _pickCandidates.watchedIdsFor(room.everyoneIds);
 
     final batch = await _pickCandidates(
       hostId: room.hostId,
@@ -23,6 +29,7 @@ class LoadMoreMatchCandidatesUseCase {
       filters: room.filters,
       startPage: fromPage,
       excludeIds: room.candidates.map((c) => c.tmdbMovieId).toSet(),
+      watchedIds: watched,
     );
 
     await _rooms.appendCandidates(

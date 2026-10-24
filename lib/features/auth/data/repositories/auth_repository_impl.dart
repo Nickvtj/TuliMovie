@@ -75,6 +75,9 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  bool get isSignedIn => _authRemote.currentUser != null;
+
+  @override
   Stream<UserEntity?> watchUserProfile(String userId) {
     return _userFirestore
         .watchUser(userId)

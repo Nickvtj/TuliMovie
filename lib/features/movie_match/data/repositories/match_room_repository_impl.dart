@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import '../../../../core/errors/app_exception.dart';
 import '../../../auth/domain/entities/user_entity.dart';
 import '../../../notifications/data/datasources/notification_firestore_data_source.dart';
@@ -54,7 +56,8 @@ class MatchRoomRepositoryImpl implements MatchRoomRepository {
       throw AppException(message: 'Erro ao criar sala.', cause: e);
     }
 
-    await _notifyInvited(roomId: model.id, host: host, invitedIds: invited);
+    // Não segura a abertura da sala esperando os avisos.
+    unawaited(_notifyInvited(roomId: model.id, host: host, invitedIds: invited));
     return model.toEntity();
   }
 

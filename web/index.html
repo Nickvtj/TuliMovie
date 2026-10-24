@@ -95,14 +95,17 @@
     })();
   </script>
 
-  <!-- Firebase Cloud Messaging (background) — substitua pelos valores do Firebase Console -->
+  <!-- O push foi removido: desinstala o service worker antigo de quem já tinha. -->
   <script>
     if ('serviceWorker' in navigator) {
-      window.addEventListener('load', function () {
-        navigator.serviceWorker.register('/firebase-messaging-sw.js').catch(function (err) {
-          console.warn('FCM SW registration failed:', err);
+      navigator.serviceWorker.getRegistrations().then(function (registrations) {
+        registrations.forEach(function (registration) {
+          var worker = registration.active || registration.waiting || registration.installing;
+          if (worker && worker.scriptURL.indexOf('firebase-messaging-sw.js') !== -1) {
+            registration.unregister();
+          }
         });
-      });
+      }).catch(function () {});
     }
   </script>
 </body>

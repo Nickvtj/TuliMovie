@@ -1,7 +1,6 @@
 # TuliMovie — build otimizado Web + APK (Windows PowerShell)
 param(
-  [string]$TmdbApiKey = $env:TMDB_API_KEY,
-  [string]$FcmVapidKey = $env:FCM_VAPID_KEY
+  [string]$TmdbApiKey = $env:TMDB_API_KEY
 )
 
 $ErrorActionPreference = "Stop"
@@ -12,9 +11,6 @@ if (-not $TmdbApiKey) {
 }
 
 $defines = @("--dart-define=TMDB_API_KEY=$TmdbApiKey")
-if ($FcmVapidKey) {
-  $defines += "--dart-define=FCM_VAPID_KEY=$FcmVapidKey"
-}
 
 Write-Host ">> flutter pub get"
 flutter pub get

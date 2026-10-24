@@ -21,12 +21,4 @@ abstract final class EnvConfig {
   );
 
   static bool get hasTmdbApiKey => tmdbApiKey.isNotEmpty;
-
-  /// Chave VAPID (Firebase Console → Cloud Messaging → Web Push certificates).
-  static const String fcmVapidKey = String.fromEnvironment(
-    'FCM_VAPID_KEY',
-    defaultValue: '',
-  );
-
-  static bool get hasFcmVapidKey => fcmVapidKey.isNotEmpty;
 }

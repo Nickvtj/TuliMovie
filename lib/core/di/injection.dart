@@ -48,7 +48,6 @@ import '../../features/social/domain/repositories/social_repository.dart';
 import '../../features/social/domain/usecases/follow_user_use_case.dart';
 import '../../features/social/domain/usecases/search_users_use_case.dart';
 import '../../features/social/domain/usecases/unfollow_user_use_case.dart';
-import '../notifications/push_notification_service.dart';
 import '../services/image_export_service.dart';
 import '../../features/movie_match/data/datasources/match_room_firestore_data_source.dart';
 import '../../features/movie_match/data/repositories/match_room_repository_impl.dart';
@@ -148,7 +147,6 @@ Future<void> configureDependencies() async {
         rooms: sl<MatchRoomRepository>(),
       ),
     )
-    ..registerLazySingleton<PushNotificationService>(PushNotificationService.new)
     ..registerLazySingleton<ImageExportService>(ImageExportService.new)
     ..registerLazySingleton(() => ShareReviewCardUseCase(sl<ImageExportService>()))
     ..registerLazySingleton<ProfileRepository>(

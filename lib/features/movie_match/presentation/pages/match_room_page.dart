@@ -60,6 +60,10 @@ class _MatchRoomPageState extends ConsumerState<MatchRoomPage> {
           return const Scaffold(body: Center(child: Text('Sala encerrada.')));
         }
         if (user != null) _joinIfInvited(room, user.id);
+        // Já dentro da sala: os votos carregam aqui, e o swipe abre pronto.
+        if (user != null && room.participantIds.contains(user.id)) {
+          ref.watch(matchLikesStreamProvider(widget.roomId));
+        }
 
         final isHost = user?.id == room.hostId;
         final everyone = {room.hostId, ...room.invitedIds, ...room.participantIds}.toList();

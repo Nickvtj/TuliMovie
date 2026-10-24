@@ -10,7 +10,7 @@
 
 <img src="https://img.shields.io/badge/Flutter-3-02569B?style=flat-square&logo=flutter&logoColor=white" alt="Flutter" />
 <img src="https://img.shields.io/badge/Dart-3.5+-0175C2?style=flat-square&logo=dart&logoColor=white" alt="Dart" />
-<img src="https://img.shields.io/badge/Firebase-Auth_·_Firestore_·_FCM-FFCA28?style=flat-square&logo=firebase&logoColor=black" alt="Firebase" />
+<img src="https://img.shields.io/badge/Firebase-Auth_·_Firestore-FFCA28?style=flat-square&logo=firebase&logoColor=black" alt="Firebase" />
 <img src="https://img.shields.io/badge/TMDB-API-01B4E4?style=flat-square&logo=themoviedatabase&logoColor=white" alt="TMDB" />
 <img src="https://img.shields.io/badge/PWA-iPhone_·_Android_·_Web-5A0FC8?style=flat-square&logo=pwa&logoColor=white" alt="PWA" />
 
@@ -179,7 +179,7 @@ O app busca no TMDB uma mistura de clássicos bem avaliados e lançamentos recen
 | **Estado** | [Riverpod](https://riverpod.dev) + injeção de dependências com [get_it](https://pub.dev/packages/get_it) |
 | **Login** | Firebase Authentication (e-mail e senha + @username único) |
 | **Banco de dados** | Cloud Firestore, protegido pelas regras de [`firestore.rules`](firestore.rules) |
-| **Notificações** | Avisos dentro do app (Firestore) + Firebase Cloud Messaging (Web Push) |
+| **Notificações** | Avisos dentro do app (Firestore) |
 | **Filmes** | [TMDB API](https://www.themoviedb.org/documentation/api) via [Dio](https://pub.dev/packages/dio), com cache em memória |
 | **Hospedagem** | Firebase Hosting, no plano **Spark** (gratuito, sem Cloud Functions) |
 | **Extras** | `flutter_card_swiper` (Match), `lottie` (comemoração), `screenshot` + `share_plus` (card para Stories) |
@@ -271,8 +271,7 @@ cp dart_defines.example.json dart_defines.json
 
 ```json
 {
-  "TMDB_API_KEY": "sua_api_key_v3",
-  "FCM_VAPID_KEY": ""
+  "TMDB_API_KEY": "sua_api_key_v3"
 }
 ```
 

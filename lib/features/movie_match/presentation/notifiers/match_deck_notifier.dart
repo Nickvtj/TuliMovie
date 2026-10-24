@@ -57,7 +57,8 @@ class MatchDeckNotifier extends StateNotifier<MatchDeckState> {
         _loadMore = loadMore,
         super(const MatchDeckState());
 
-  static const _prefetchWhenLeft = 5;
+  /// Pede o próximo lote cedo o bastante para chegar antes do último card.
+  static const _prefetchWhenLeft = 10;
 
   final String _userId;
   final LoadMoreMatchCandidatesUseCase _loadMore;

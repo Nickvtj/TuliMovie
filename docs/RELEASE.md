@@ -5,30 +5,25 @@
 1. `flutter doctor`
 2. `flutterfire configure` → `lib/core/config/firebase_options.dart`
 3. Copie `.firebaserc.example` → `.firebaserc` com seu project ID
-4. Atualize `web/firebase-messaging-sw.js` com o `firebaseConfig` real
-5. Firebase Console → Cloud Messaging → **Web Push certificates** → copie a chave VAPID
 
 ## Variáveis (`--dart-define`)
 
 | Variável | Obrigatória | Uso |
 |----------|-------------|-----|
 | `TMDB_API_KEY` | Sim | Catálogo TMDB |
-| `FCM_VAPID_KEY` | Web Push | PWA iOS/Android |
 
 ## Build Web (PWA)
 
 ```powershell
 flutter pub get
 flutter build web --release `
-  --dart-define=TMDB_API_KEY=sua_chave `
-  --dart-define=FCM_VAPID_KEY=sua_vapid
+  --dart-define=TMDB_API_KEY=sua_chave
 ```
 
 Ou:
 
 ```powershell
 $env:TMDB_API_KEY="..."
-$env:FCM_VAPID_KEY="..."
 .\scripts\build_release.ps1
 ```
 
@@ -44,7 +39,6 @@ URL típica: `https://SEU_PROJECT.web.app`
 
 1. Abrir no **Safari**
 2. Compartilhar → **Adicionar à Tela de Início**
-3. Aceitar notificações quando o app pedir (iOS 16.4+)
 
 ## APK Android
 

@@ -21,9 +21,10 @@ class TuliHttpClient {
         connectTimeout: NetworkConstants.connectTimeout,
         receiveTimeout: NetworkConstants.receiveTimeout,
         sendTimeout: NetworkConstants.sendTimeout,
+        // Sem Content-Type fixo: em GET ele faz o navegador mandar um preflight
+        // CORS (OPTIONS) antes de cada chamada ao TMDB. Com corpo, o Dio deduz.
         headers: {
           'Accept': 'application/json',
-          'Content-Type': 'application/json',
         },
         responseType: ResponseType.json,
       )
